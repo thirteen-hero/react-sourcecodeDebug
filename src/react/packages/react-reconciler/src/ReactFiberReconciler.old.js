@@ -255,7 +255,7 @@ export function createContainer(
 ): OpaqueRoot {
   const hydrate = false;
   const initialChildren = null;
-  console.warn('creatRoot通过createContainer内调用createFiberRoot创建应用里面唯一的一个FiberRoot')
+  console.warn('creatRoot通过createContainer内调用createFiberRoot创建根元素fiberRootNode');
   return createFiberRoot(
     containerInfo,
     tag,

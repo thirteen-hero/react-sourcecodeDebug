@@ -74,21 +74,18 @@ export type Fiber = {|
   // alternate versions of the tree. We put this on a single object for now to
   // minimize the number of objects created during the initial render.
 
+  // 作为静态数据结构，存储节点 dom 相关信息
   // Tag identifying the type of fiber.
-  tag: WorkTag,
-
+  tag: WorkTag,  // 组件的类型，取决于 react 的元素类型
   // Unique identifier of this child.
-  key: null | string,
-
+  key: null | string, 
   // The value of element.type which is used to preserve the identity during
   // reconciliation of this child.
-  elementType: any,
-
+  elementType: any, // 元素类型
   // The resolved function/class/ associated with this fiber.
-  type: any,
-
+  type: any, // 定义与此fiber关联的功能或类。对于组件，它指向构造函数；对于DOM元素，它指定HTML tag
   // The local state associated with this fiber.
-  stateNode: any,
+  stateNode: any, // 真实 dom 节点
 
   // Conceptual aliases
   // parent : Instance -> return The parent happens to be the same as the
@@ -96,16 +93,15 @@ export type Fiber = {|
 
   // Remaining fields belong to Fiber
 
+  // fiber 链表树相关
   // The Fiber to return to after finishing processing this one.
   // This is effectively the parent, but there can be multiple parents (two)
   // so this is only the parent of the thing we're currently processing.
   // It is conceptually the same as the return address of a stack frame.
-  return: Fiber | null,
-
-  // Singly Linked List Tree Structure.
-  child: Fiber | null,
-  sibling: Fiber | null,
-  index: number,
+  return: Fiber | null, // 父 fiber
+  child: Fiber | null, // 第一个子 fiber
+  sibling: Fiber | null, // 下一个兄弟 fiber
+  index: number, // 在父 fiber 下面的子 fiber 中的下标
 
   // The ref last used to attach this node.
   // I'll avoid adding an owner field for prod and model that as functions.
@@ -114,18 +110,18 @@ export type Fiber = {|
     | (((handle: mixed) => void) & {_stringRef: ?string, ...})
     | RefObject,
 
+  // 工作单元，用于计算 state 和 props 渲染
   // Input is the data coming into process this fiber. Arguments. Props.
-  pendingProps: any, // This type will be more specific once we overload the tag.
+  // 本次渲染需要使用的 props
+  pendingProps: any, // This type will be more specific once we overload the tag. 
+  // 上次渲染使用的 props
   memoizedProps: any, // The props used to create the output.
-
   // A queue of state updates and callbacks.
-  updateQueue: mixed,
-
+  updateQueue: mixed, // 用于状态更新、回调函数、DOM更新的队列
   // The state used to create the output
-  memoizedState: any,
-
+  memoizedState: any, // 上次渲染后的 state 状态
   // Dependencies (contexts, events) for this fiber, if it has any
-  dependencies: Dependencies | null,
+  dependencies: Dependencies | null, // contexts、events 等依赖
 
   // Bitfield that describes properties about the fiber and its subtree. E.g.
   // the ConcurrentMode flag indicates whether the subtree should be async-by-
@@ -135,27 +131,27 @@ export type Fiber = {|
   // before its child fibers are created.
   mode: TypeOfMode,
 
+  // 副作用相关
   // Effect
-  flags: Flags,
-  subtreeFlags: Flags,
-  deletions: Array<Fiber> | null,
-
+  flags: Flags, // 记录更新时当前 fiber 的副作用(删除、更新、替换等)状态
+  subtreeFlags: Flags, // 当前子树的副作用状态
+  deletions: Array<Fiber> | null, // 要删除的子 fiber
   // Singly linked list fast path to the next fiber with side-effects.
-  nextEffect: Fiber | null,
-
+  nextEffect: Fiber | null, // 下一个有副作用的 fiber
   // The first and last fiber with side-effect within this subtree. This allows
   // us to reuse a slice of the linked list when we reuse the work done within
   // this fiber.
-  firstEffect: Fiber | null,
-  lastEffect: Fiber | null,
+  firstEffect: Fiber | null, // 指向第一个有副作用的 fiber
+  lastEffect: Fiber | null, // 指向最后一个有副作用的 fiber 
 
+  // 优先级相关
   lanes: Lanes,
   childLanes: Lanes,
 
   // This is a pooled version of a Fiber. Every fiber that gets updated will
   // eventually have a pair. There are cases when we can clean up pairs to save
   // memory if we need to.
-  alternate: Fiber | null,
+  alternate: Fiber | null, // 指向 workInProgress fiber 树中对应的节点
 
   // Time spent rendering this Fiber and its descendants for the current update.
   // This tells us how well the tree makes use of sCU for memoization.

@@ -141,7 +141,19 @@ export function createFiberRoot(
   onRecoverableError: null | ((error: mixed) => void),
   transitionCallbacks: null | TransitionTracingCallbacks,
 ): FiberRoot {
-  console.log('createFiberRoot参数(containerInfo, tag, hydrate, initialChildren, hydrationCallbacks, concurrentUpdatesByDefaultOverride, identifierPrefix, onRecoverableError, transitionCallbacks)', containerInfo, tag, hydrate, initialChildren, hydrationCallbacks, concurrentUpdatesByDefaultOverride, identifierPrefix, onRecoverableError, transitionCallbacks)
+  console.log(
+      `createFiberRoot参数(
+      containerInfo: ${containerInfo}, 
+      tag: ${tag}, 
+      hydrate: ${hydrate}, 
+      initialChildren: ${initialChildren}, 
+      hydrationCallbacks: ${hydrationCallbacks}, 
+      concurrentUpdatesByDefaultOverride: ${concurrentUpdatesByDefaultOverride}, 
+      identifierPrefix: ${identifierPrefix}, 
+      onRecoverableError: ${onRecoverableError}, 
+      transitionCallbacks: ${transitionCallbacks})\n`, 
+      'containerInfo:', containerInfo,
+    );
   const root: FiberRoot = (new FiberRootNode(
     containerInfo,
     tag,
@@ -156,19 +168,33 @@ export function createFiberRoot(
   if (enableTransitionTracing) {
     root.transitionCallbacks = transitionCallbacks;
   }
-
+  console.log('创建好的fiberRootNode:\n', root);
   // Cyclic construction. This cheats the type system right now because
   // stateNode is any.
-  console.log('createFiberRoot内还会创建一个HostRootFiber，FiberRoot.current会指向这个HostRootFiber')
-  console.log('FiberRoot.current是当前页面的虚拟DOM，在页面更新时候FiberRoot会切换current为完成Diff算法的fiber以达到页面更新')
+  console.warn('createFiberRoot内调用createHostRootFiber创建HostRootFiber');
   const uninitializedFiber = createHostRootFiber(
     tag,
     isStrictMode,
     concurrentUpdatesByDefaultOverride,
   );
+  console.log('创建好的HostRootFiber:\n', uninitializedFiber);
+  console.log('fiberNode数据结构见文件:src/react/packages/react-reconciler/src/ReactInternalTypes.js');
   root.current = uninitializedFiber;
   uninitializedFiber.stateNode = root;
-  console.log('HostRootFiber.stateNode指向FiberRoot，在diff算法节点复用时候会用到')
+  console.warn('fiberRootNode和HostRootFiber创建好关联,fiberRootNode.current=HostRootFiber,HostRootFiber.stateNode=fiberRootNode');
+  console.log('FiberRootNode和HostRootFiber关联好的对应结构:\n', root, uninitializedFiber);
+  console.log(`
+    fiber中和dom节点相关的信息主要关注tag、key、type和stateNode。\n
+    tag\n
+    fiber中tag属性的ts类型为workType,用于标记不同的react组件类型。在react reconciler时,beginWork和completeWork等流程时,都会根据tag类型的不同,去执行不同的函数处理fiber节点。\n
+    workType枚举见文件:src/react/packages/react-reconciler/src/ReactWorkTags.js\n
+    key和type\n
+    key和type两项用于react diff过程中确定fiber是否可以复用。\n
+    key为用户定义的唯一值。type定义与此fiber关联的功能或类。对于组件,它指向函数或者类本身;对于DOM元素,它指定HTML tag。\n
+    stateNode\n
+    stateNode用于记录当前fiber所对应的真实dom节点或者当前虚拟组件的实例,这么做的原因第一是为了实现Ref,第二是为了实现真实dom的跟踪。\n
+  `);
+
   if (enableCache) {
     const initialCache = createCache();
     retainCache(initialCache);
@@ -198,14 +224,10 @@ export function createFiberRoot(
     };
     uninitializedFiber.memoizedState = initialState;
   }
-  console.log('创建完HostRootFiber后会先初始化它的memoizedState也就是状态')
-  console.warn('FiberRoot和HostRootFiber对应结构',root, uninitializedFiber)
-  console.error(`简单介绍下FiberNode中的一些数据结构，因为react在运行时候会存在两棵Fiber树，
-  一棵树是当先页面展示的树可以把它理解成current tree，另外一棵是当组件状态发生改变时候会形成一颗workInProgress tree，
-  这也是进行diff时候的两棵树。这两棵树通过alternate属性相互指向。
-  fiber.return代表父元素，fiber.tag代表组件类型(函数组件，类组件，空标签原生dom等)
-  fiber.lanes代表优先级，fiber.memoizedProps代表上一次的props，fiber.memoizedState代表上一次的组件状态
-  fiber.sibling代表兄弟节点，带lanes都是和优先级相关`)
+  console.warn('创建完HostRootFiber后会先初始化它的memoizedState也就是状态');
+  console.log('memoizedState数据结构:\n', uninitializedFiber.memoizedState);
+  console.log(`react在运行时候会存在两棵Fiber树,一棵是当前页面展示的树,可以把它理解成current tree,另外一棵是当组件状态发生改变时,根据current tree形成的
+  workInProgress tree,两棵树通过alternate属性相互指向,react-diff就是在这两棵树上进行的。`);
   initializeUpdateQueue(uninitializedFiber);
   return root;
 }

@@ -169,7 +169,7 @@ export function createRoot(
   container: Element | DocumentFragment,
   options?: CreateRootOptions,
 ): RootType {
-  console.log('createRoot会先校验传入的container是否为一个有效的DOM节点，如果是开发环境还会做一些其他校验如是否为body等')
+  console.log('createRoot会先校验传入的container是否为一个有效的DOM节点,如果是开发环境还会做一些其他校验如是否为body等')
   // 校验container是否有效
   if (!isValidContainer(container)) {
     throw new Error('createRoot(...): Target container is not a DOM element.');
@@ -236,16 +236,18 @@ export function createRoot(
     transitionCallbacks,
   );
   markContainerAsRoot(root.current, container); // 把container这个DOM打上React的标记，就是在DOM上加个属性
-  console.warn('创建完FiberRoot和HostRootFiber后，会根据传入的container是否为注释标签')
-  console.log('如果是则取它的父节点，如果不是就取本身，通过listenToAllSupportedEvents把组成事件(事件委托)')
+  console.warn(`创建完FiberRootNode和HostRootFiber后,给container这个dom打上标记,例:\n
+    __reactContainer$bd2fzgyz0b: hostRootFiber`);
+  console.error('第二阶段:处理事件委托');
+  console.log('判断传入的container根节点是否为注释标签,是则取它的父节点,否则取本身');
   const rootContainerElement: Document | Element | DocumentFragment =
     container.nodeType === COMMENT_NODE
       ? (container.parentNode: any)
-      : container; //判断传入的container是不是注释标签，是就去它父元素
-  //事件绑定
+      : container; //判断传入的container是否注释标签，是就取它的父元素，否则取它本身
+  
   listenToAllSupportedEvents(rootContainerElement);
-  console.error(`至此createRoot工作基本做完，主要就是根据传入的DOM创建FiberRoot和HostRootFiber，初始化HostRootFiber的状态以及更新队列
-  并把HostRootFiber.stateNode指向FiberRoot，把FiberRoot.current指向HostRootFiber，用于更新。
+  console.error(`至此createRoot工作基本做完,主要就是根据传入的DOM创建FiberRoot和HostRootFiber,初始化HostRootFiber的状态以及更新队列
+  并把HostRootFiber.stateNode指向FiberRoot,把FiberRoot.current指向HostRootFiber,32用于更新。
   并通过所有浏览器事件名创建对应的带有更新优先级的listener绑定在传入的DOM节点上`)
   return new ReactDOMRoot(root);
 }
