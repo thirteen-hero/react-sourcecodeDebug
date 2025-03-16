@@ -238,7 +238,8 @@ export function createRoot(
   markContainerAsRoot(root.current, container); // 把container这个DOM打上React的标记，就是在DOM上加个属性
   console.warn(`创建完FiberRootNode和HostRootFiber后,给container这个dom打上标记,例:\n
     __reactContainer$bd2fzgyz0b: hostRootFiber`);
-  console.error('第二阶段:处理事件委托');
+  console.error('第二阶段:react事件系统初始化');
+  console.log(`这里先总结下React的事件,初始化时候React会把所有的浏览器事件绑定到传入的container上面,绑定的事件是一个带有优先级包装过的listenr。如果传入的是注释标签就绑定在它父元素上面,并且定义一个map映射表,把原生事件和react事件相对应,当触发一个事件的时候实际是触发初始化时候绑定的listenr,执行这个listenr时会从触发的target向上到root递归收集相同react事件,放在一个listenrs数组中,React事件函数是通过优先级封装了一层,每个React事件有着不同的优先级,不同事件对应不同优先级,也对应着不同的事件对象syntheticBaseEvent,把收集到的事件通过batchUpdate触发事件`);
   console.log('判断传入的container根节点是否为注释标签,是则取它的父节点,否则取本身');
   const rootContainerElement: Document | Element | DocumentFragment =
     container.nodeType === COMMENT_NODE
@@ -247,7 +248,7 @@ export function createRoot(
   
   listenToAllSupportedEvents(rootContainerElement);
   console.error(`至此createRoot工作基本做完,主要就是根据传入的DOM创建FiberRoot和HostRootFiber,初始化HostRootFiber的状态以及更新队列
-  并把HostRootFiber.stateNode指向FiberRoot,把FiberRoot.current指向HostRootFiber,32用于更新。
+  并把HostRootFiber.stateNode指向FiberRoot,把FiberRoot.current指向HostRootFiber,用于更新。
   并通过所有浏览器事件名创建对应的带有更新优先级的listener绑定在传入的DOM节点上`)
   return new ReactDOMRoot(root);
 }

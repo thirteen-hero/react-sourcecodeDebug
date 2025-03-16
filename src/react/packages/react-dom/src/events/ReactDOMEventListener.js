@@ -86,12 +86,12 @@ export function createEventListenerWrapperWithPriority(
   eventSystemFlags: EventSystemFlags,
 ): Function {
   if(log === 0) {
-    console.log('createEventListenerWrapperWithPriority会通过事件名调用getEventPriority获取该事件的优先级')
-    console.warn('主要有三种优先级，从高到低分别是DiscreteEventPriority，ContinuousEventPriority，DefaultEventPriority',DiscreteEventPriority,ContinuousEventPriority,DefaultEventPriority)
-    console.log('像鼠标点击，键盘输入等被列为最高优先级，像鼠标移动，滚动鼠标等被列为第二优先级，这三种优先级对应着不同的listener')
-    console.warn(`当触发这三种listener时候本质都会调用dispatchEvent，不同的是除了默认优先级，
-    其余两种优先级都会先获取当前更新优先级赋值给一个变量previousPriority，再把当前更新优先级设置触发当前事件的优先级，再去触发dispatchEvent，最后再把当前优先级设置有previousPriority`)
-    log = 1
+    console.log(`react根据原生浏览器事件名称将其划分为三个优先级,根据不同的优先级注册不同的事件监听回调函数,从高到低分别是:
+      DiscreteEventPriority, // 最高优先级 鼠标点击、键盘输入等
+      ContinuousEventPriority, // 第二优先级 鼠标移动、滚动鼠标等
+      DefaultEventPriority, // 最低优先级 
+    `);
+    console.log(`触发这三种优先级的本质都是调用dispatchEvent,不同的是除了默认优先级,其余两种优先级都会先获取当前更新优先级赋值给一个变量previousPriority,再把当前更新优先级设置触发当前事件的优先级,再去触发dispatchEvent,最后再把当前优先级设置为previousPriority`);
   }
   const eventPriority = getEventPriority(domEventName);
   let listenerWrapper;
@@ -107,6 +107,10 @@ export function createEventListenerWrapperWithPriority(
     default:
       listenerWrapper = dispatchEvent;
       break;
+  }
+  if (log === 0) {
+    console.warn('根据优先级确定事件监听回调函数后,通过bind将原生事件名称、事件系统flag类型、和根元素信息传给dispatchEvent函数');
+    log = 1
   }
   return listenerWrapper.bind(
     null,
