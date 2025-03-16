@@ -184,15 +184,15 @@ export function createFiberRoot(
   console.warn('fiberRootNode和HostRootFiber创建好关联,fiberRootNode.current=HostRootFiber,HostRootFiber.stateNode=fiberRootNode');
   console.log('FiberRootNode和HostRootFiber关联好的对应结构:\n', root, uninitializedFiber);
   console.log(`
-    fiber中和dom节点相关的信息主要关注tag、key、type和stateNode。\n
-    tag\n
-    fiber中tag属性的ts类型为workType,用于标记不同的react组件类型。在react reconciler时,beginWork和completeWork等流程时,都会根据tag类型的不同,去执行不同的函数处理fiber节点。\n
-    workType枚举见文件:src/react/packages/react-reconciler/src/ReactWorkTags.js\n
-    key和type\n
-    key和type两项用于react diff过程中确定fiber是否可以复用。\n
-    key为用户定义的唯一值。type定义与此fiber关联的功能或类。对于组件,它指向函数或者类本身;对于DOM元素,它指定HTML tag。\n
-    stateNode\n
-    stateNode用于记录当前fiber所对应的真实dom节点或者当前虚拟组件的实例,这么做的原因第一是为了实现Ref,第二是为了实现真实dom的跟踪。\n
+    fiber中和dom节点相关的信息主要关注tag、key、type和stateNode。
+    tag
+    fiber中tag属性的ts类型为workType,用于标记不同的react组件类型。在react reconciler时,beginWork和completeWork等流程时,都会根据tag类型的不同,去执行不同的函数处理fiber节点。
+    workType枚举见文件:src/react/packages/react-reconciler/src/ReactWorkTags.js
+    key和type
+    key和type两项用于react diff过程中确定fiber是否可以复用。
+    key为用户定义的唯一值。type定义与此fiber关联的功能或类。对于组件,它指向函数或者类本身;对于DOM元素,它指定HTML tag。
+    stateNode
+    stateNode用于记录当前fiber所对应的真实dom节点或者当前虚拟组件的实例,这么做的原因第一是为了实现Ref,第二是为了实现真实dom的跟踪。
   `);
 
   if (enableCache) {
