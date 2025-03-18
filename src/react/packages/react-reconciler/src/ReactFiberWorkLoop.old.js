@@ -515,31 +515,26 @@ function requestRetryLane(fiber: Fiber) {
   return claimNextRetryLane();
 }
 // 调度更新
-let log = 0
 export function scheduleUpdateOnFiber(
   fiber: Fiber,
   lane: Lane,
   eventTime: number,
 ): FiberRoot | null {
-  if(log === 0) {
-    console.warn('调度更新的入口函数scheduleUpdateOnFiber');
-    console.log(`
-    scheduleUpdateOnFiber(
-      fiber, // 当前需要更新的fiber节点
-      lane, // 当前fiber节点的更新优先级
-      eventTime, // 当前开始调度更新的时间
-    `);
-    console.log('检查是否有循环更新,例如在componentDidUpdate生命周期内函数调用setState等。');
-  }
+  console.warn('调度更新的入口函数scheduleUpdateOnFiber');
+  console.log(`
+  scheduleUpdateOnFiber(
+    fiber, // 当前需要更新的fiber节点
+    lane, // 当前fiber节点的更新优先级
+    eventTime, // 当前开始调度更新的时间
+  `);
+  console.log('检查是否有循环更新,例如在componentDidUpdate生命周期内函数调用setState等。');
   checkForNestedUpdates();// 检测是否死循环
   if (__DEV__) {
     if (isRunningInsertionEffect) {
       console.error('useInsertionEffect must not schedule updates.');
     }
   }
-  if (log === 0) {
-    console.log(`从当前更新节点一直向上递归到HostRootFiber,递归过程主要是更新current tree和workInProgress tree的childLanes`);
-  }
+  console.log(`从当前更新节点一直向上递归到HostRootFiber,递归过程主要是更新current tree和workInProgress tree的childLanes`);
   //markUpdateLaneFromFiberToRoot这是一个从当前更新节点到hostrootfiber的一个向上递归过程主要用于更新递归路径上fiber的lanes
   const root = markUpdateLaneFromFiberToRoot(fiber, lane);
   if (root === null) {
@@ -553,9 +548,7 @@ export function scheduleUpdateOnFiber(
 
   // Mark that the root has a pending update.
   //标记root有一个正在更新的任务
-  if (log === 0) {
-    console.log(`标记root有一个正在更新的任务,将正在更新的lane插入到root.pendingLanes中`);
-  }
+  console.log(`标记root有一个正在更新的任务,将正在更新的lane插入到root.pendingLanes中`);
   markRootUpdated(root, lane, eventTime);
 
   if (
@@ -643,9 +636,7 @@ export function scheduleUpdateOnFiber(
         markRootSuspended(root, workInProgressRootRenderLanes);
       }
     }
-    if (log === 0) {
-      console.warn(`在ensureRootIsScheduled中注册调度任务,由scheduler调度,进行fiber构造`);
-    }
+    console.warn(`在ensureRootIsScheduled中注册调度任务,由scheduler调度,进行fiber构造`);
     ensureRootIsScheduled(root, eventTime);
     if (
       lane === SyncLane &&
@@ -769,7 +760,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
     root === workInProgressRoot ? workInProgressRootRenderLanes : NoLanes,
   );
   if (nextLanes === NoLanes) {
-    console.log('本次执行的任务的lanes为0,没有任务需要执行,中断更新');
+    console.log('本次执行的任务的lanes为0,没有任务需要执行,关闭本次调度');
     // Special case: There's nothing to work on.
     if (existingCallbackNode !== null) {
       cancelCallback(existingCallbackNode);
@@ -808,25 +799,26 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
       }
     }
     console.warn(`新任务优先级${newCallbackPriority}与现有任务优先级${existingCallbackPriority}相同,继续执行之前的任务`);
+    console.log('新任务优先级与现有任务优先级相同时,不会开启新的调度。比如在一个事件中多次调用setState,第一次调用setState时,开启了一个调度,当后续setState调用进入时,发现优先级相同,重用上一轮的调度。结合scheduler的逻辑,存在正在执行的调度,将新的任务加入现有的调度中。这也就是为什么多次调用setState,只会render一次');
     // The priority hasn't changed. We can reuse the existing task. Exit.
     return;
   }
   
   if (existingCallbackNode != null) {
-    console.log('新任务优先级大于现有任务优先级,取消现有任务的执行,执行新任务');
+    console.log('新任务优先级与现有任务优先级不同,取消上次的调度,即将开始新一次的调度');
     // Cancel the existing callback. We'll schedule a new one below.
     cancelCallback(existingCallbackNode);
   }
   
-  console.warn('开始调度任务,判断新任务是否同步优先级');
+  console.warn('开始新一次调度,判断新任务是否同步优先级');
   // Schedule a new callback.
   let newCallbackNode;
   if (newCallbackPriority === SyncLane) {
-    console.log(`当新任务是同步优先级,会将任务performSyncWorkOnRoot放在syncQueue里面,然后判断当前环境是否支持微任务queueMicrotask,支持就通过并发模式进行reconcile过程,不支持就通过同步模式进行reconcile过程,这种模式下的调度任务是不可以被打断的。`);
+    console.log(`新任务是同步优先级,会将任务performSyncWorkOnRoot放在syncQueue里面,然后判断当前环境是否支持微任务queueMicrotask,支持就通过并发模式进行reconcile过程,不支持就通过同步模式进行reconcile过程,这种模式下的调度任务是不可以被打断的。`);
     console.log(`以下几种情况下使用同步模式:
       1、任务很紧急的,比如饥饿的任务不能再被延期了
       2、老版本的react不支持并发模式或者没有开启并发模式
-    '`);
+    `);
     // Special case: Sync React callbacks are scheduled on a special
     // internal queue
     if (root.tag === LegacyRoot) {
@@ -840,6 +832,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
     }
     // 判断是否支持微任务
     if (supportsMicrotasks) {
+      console.log('支持微任务队列,进行并发模式的reconcile');
       // Flush the queue in a microtask.
       if (__DEV__ && ReactCurrentActQueue.current !== null) {
         // Inside `act`, use our internal `act` queue so that these get flushed
@@ -863,6 +856,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
         });
       }
     } else {
+      console.log('不支持微任务队列,进行同步模式的reconcile');
       // Flush the queue in an Immediate task.
       scheduleCallback(ImmediateSchedulerPriority, flushSyncCallbacks);
     }
@@ -894,11 +888,11 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
       performConcurrentWorkOnRoot.bind(null, root),
     );
   }
-  console.log('调度完后会scheduler会返回一个newCallbackNode,如果这个newCallbackNode和root上之前存在的task一样,则表示中断本次任务。');
+  console.warn('本次调度执行完毕返回一个newTask,这个newTask就是下一次调用ensureRootIsScheduled时获取到的现有任务existingCallbackNode。这也就说明了为什么总是优先级高的先执行');
   console.log(`
-    newCallbackNode: ${newCallbackNode}
-    newCallbackPriority: ${newCallbackPriority}
-  `);
+    newCallbackNode:`, newCallbackNode,
+    `newCallbackPriority:`, newCallbackPriority,
+  );
   root.callbackPriority = newCallbackPriority;
   root.callbackNode = newCallbackNode;
 }
