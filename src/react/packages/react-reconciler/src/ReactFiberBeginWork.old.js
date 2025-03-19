@@ -308,7 +308,6 @@ export function reconcileChildren(
 
     // If we had any progressed work already, that is invalid at this point so
     // let's throw it out.
-    console.error('diff 算法入口reconcileChildFibers ********')
     workInProgress.child = reconcileChildFibers(
       workInProgress,
       current.child,
@@ -3796,9 +3795,7 @@ function beginWork(
       );
     }
   }
-  console.log('当前beginwork的渲染优先级以及current tree 和workInProgress tree',renderLanes, current, workInProgress)
   if (current !== null) {
-    console.log('current不为空******************************')
     const oldProps = current.memoizedProps;
     const newProps = workInProgress.pendingProps;
 
@@ -3872,7 +3869,6 @@ function beginWork(
 
   switch (workInProgress.tag) {
     case IndeterminateComponent: {
-      console.log('log: beginwork 函数组件组件初次都会走mountIndeterminateComponent再来判别是函数组件还是类组件并赋值tag')
       return mountIndeterminateComponent(
         current,
         workInProgress,

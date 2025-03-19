@@ -63,7 +63,7 @@ export function flushSyncCallbacks() {
       setCurrentUpdatePriority(DiscreteEventPriority);
       for (; i < queue.length; i++) {
         let callback = queue[i];
-        console.log(callback, 'flushSyncCallbacks 同步刷新执行的任务')
+        console.log(callback, 'flushSyncCallbacks 同步刷新执行的任务');
         do {
           callback = callback(isSync);
         } while (callback !== null);

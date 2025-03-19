@@ -900,10 +900,15 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
 // This is the entry point for every concurrent task, i.e. anything that
 // goes through Scheduler.
 function performConcurrentWorkOnRoot(root, didTimeout) {
+  console.warn('当前正在执行performConcurrentWorkOnRoot,根据情况判断使用workLoopSync或workLoopConcurrent进行beginwork和completeUnitOfWork');
+  console.log('初次render或者任务过期,都会调用workLoopSync进行更新,不会进行时间分片。不管是同步还是异步都会while循环调用performUnitOfWork进行beginWork和completeUnitOfWork');
+  console.log(`workLoop主要是分三个阶段:
+  第一个是beginWork,从hostRootFiber向下递归创建或者复用fiber给fiber打上tag(这个tag就是对应的增删改)。
+  第二个通过completeWork向上归并到Host处理props创建dom和effectlist等,这个effectlist就是收集那些打上tag的fiber,方便在commit阶段直接遍历这个list执行更改
+  最后在commit阶段,遍历effectlist(增删改对应的fiber),执行effect`);
   if (enableProfilerTimer && enableProfilerNestedUpdatePhase) {
     resetNestedUpdateFlag();
   }
-
   // Since we know we're in a React event, we can clear the current
   // event time. The next update will compute a new event time.
   currentEventTime = NoTimestamp;
@@ -1797,16 +1802,12 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
 // The work loop is an extremely hot path. Tell Closure not to inline it.
 /** @noinline */
 function workLoopSync() {
-  console.log('当前正在执行的fiber workInProgress', workInProgress)
-  console.log('初次render或者任务过期，都会调用同步的workLoop更新，不会进行时间切片，都是调用workLoopSync,不管是同步还是异步都会while循环调用performUnitOfWork')
-  console.error(`workLoop主要是分三个阶段：
-  第一个是beginWork，从hostRootFiber向下递归创建或者复用fiber给fiber打上tag（这个tag就是对应的增删改）。
-  第二个通过completeWork向上递归到Host处理props创建dom和effectlist等，这个effectlist就是收集那些打上tag的fiber，方便在commit阶段直接遍历这个list执行更改
-  最后在commit阶段提交突变，遍历effectlist（增删改对应的fiber），执行effect`)
+  console.warn('当前正在执行workLoopSync,不会进行时间分片,开始reconciler', workInProgress);
   // Already timed out, so perform work without checking if we need to yield.
   while (workInProgress !== null) {
     performUnitOfWork(workInProgress);
   }
+  console.warn('reconciler结束');
 }
 
 function renderRootConcurrent(root: FiberRoot, lanes: Lanes) {
@@ -1892,11 +1893,11 @@ function renderRootConcurrent(root: FiberRoot, lanes: Lanes) {
 /** @noinline */
 function workLoopConcurrent() {
   // Perform work until Scheduler asks us to yield
-  console.log('时间分片')
+  console.warn('当前正在执行workLoopConcurrent,会进行时间分片,开始reconciler', workInProgress);
   while (workInProgress !== null && !shouldYield()) {
-    console.log('yeild')
     performUnitOfWork(workInProgress);
   }
+  console.warn('reconciler结束');
 }
 
 function performUnitOfWork(unitOfWork: Fiber): void {
@@ -1926,7 +1927,7 @@ function performUnitOfWork(unitOfWork: Fiber): void {
 
   ReactCurrentOwner.current = null;
 }
-//归阶段
+//归并阶段
 function completeUnitOfWork(unitOfWork: Fiber): void {
   // Attempt to complete the current unit of work, then move to the next
   // sibling. If there are no more siblings, return to the parent fiber.
