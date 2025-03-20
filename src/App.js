@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useInsertionEffect, useLayoutEffect } from 'react';
 import './App.css';
 
 const App = () => {
@@ -7,6 +7,26 @@ const App = () => {
 
   useEffect(() => {
     handleClick();
+    console.log('useEffect', 222);
+    return () => {
+      console.log('useEffect', 111);
+    }
+  }, []);
+
+  useInsertionEffect(() => {
+    handleClick();
+    console.log('useInsertionEffect', 222);
+    return () => {
+      console.log('useInsertionEffect', 111);
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    handleClick();
+    console.log('useLayoutEffect', 222);
+    return () => {
+      console.log('useLayoutEffect', 111);
+    }
   }, []);
 
   const handleClick = () => {

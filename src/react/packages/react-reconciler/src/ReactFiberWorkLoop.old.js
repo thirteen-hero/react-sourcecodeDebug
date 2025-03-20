@@ -1037,9 +1037,9 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
   ensureRootIsScheduled(root, now());
   // 这里表示任务中断了会结合scheduleCallback中的workLoop中的const continuationCallback = callback(didUserCallbackTimeout)进行判断，如果continuationCallback为function表示中断
   // 其中callback就表示正在执行的任务，在执行之前的任务后如果返回一个function表示任务被中断了，就会把当前正在执行的task的callback赋值为被中断的函数，一般中断函数就是当前执行task的callback，方便重启
-  console.warn('root原有的task和执行调度返回的task', originalCallbackNode, root.callbackNode)
+  console.warn('root原有的task和执行调度返回的task', originalCallbackNode, root.callbackNode);
   if (root.callbackNode === originalCallbackNode) {
-    console.log('****************************************任务被中断啦*********************************')
+    console.log('任务被中断啦');
     // The task node scheduled for this root is the same one that's
     // currently executed. Need to return a continuation.
     return performConcurrentWorkOnRoot.bind(null, root);
@@ -2051,6 +2051,7 @@ function commitRootImpl(
   recoverableErrors: null | Array<mixed>,
   renderPriorityLevel: EventPriority,
 ) {
+  console.warn('开始commit');
   do {
     // `flushPassiveEffects` will call `flushSyncUpdateQueue` at the end, which
     // means `flushPassiveEffects` will sometimes result in additional
@@ -2059,7 +2060,7 @@ function commitRootImpl(
     // TODO: Might be better if `flushPassiveEffects` did not automatically
     // flush synchronous work at the end, to avoid factoring hazards like this.
     // 这个函数很重要 清除effect
-    console.warn('提交阶段，先执行flushPassiveEffects执行effect任务，flushPassiveEffects这个函数里面会先执行effect的清除函数再执行effect')
+    console.log('处理useEffect相关逻辑');
     flushPassiveEffects();
   } while (rootWithPendingPassiveEffects !== null);
   flushRenderPhaseStrictModeWarningsInDEV();
@@ -2140,9 +2141,6 @@ function commitRootImpl(
   // TODO: Delete all other places that schedule the passive effect callback
   // They're redundant.
   // 表示当前渲染触发了被动渲染也就是flags为PassiveMask，也就是带有副作用effect的fiber，会新开调度执行也就是异步执行
-  console.log('完成diff算法后的虚拟dom：', finishedWork)
-  console.log('当前渲染触发了被动渲染也就是flags为PassiveMask，也就是带有副作用effect的fiber，会新开调度执行也就是异步执行')
-  console.log( PassiveMask, NoFlags)
   if (
     (finishedWork.subtreeFlags & PassiveMask) !== NoFlags ||
     (finishedWork.flags & PassiveMask) !== NoFlags
@@ -2150,6 +2148,8 @@ function commitRootImpl(
     if (!rootDoesHavePassiveEffects) {
       rootDoesHavePassiveEffects = true;
       pendingPassiveEffectsRemainingLanes = remainingLanes;
+      console.log('完成diff算法后的虚拟dom:', finishedWork);
+      console.log('当前渲染触发了被动渲染也就是flags为PassiveMask,也就是带有副作用effect的fiber,新开调度异步执行');
       scheduleCallback(NormalSchedulerPriority, () => {
         // 调度执行
         flushPassiveEffects();
@@ -2195,7 +2195,7 @@ function commitRootImpl(
     // The first phase a "before mutation" phase. We use this phase to read the
     // state of the host tree right before we mutate it. This is where
     // getSnapshotBeforeUpdate is called.
-    console.error('commit的第一个阶段，这里主要处理class组件和hostRoot组件，因为只有他们两个组件才会带Snapshot的flags \n对于class组件会调用getSnapshotBeforeUpdate生命周期， hostRoot对清空容器内容，也就是#root里面的内容')
+    console.warn('commitBeforeMutationEffects,更新class组件实例上的state、props等,以及执行getSnapShotBeforeUpdate生命周期函数。');
     // commit的第一个阶段，这里主要处理class组件和hostRoot组件，因为只有他们两个组件才会带Snapshot的flags
     // 对于class组件会调用getSnapshotBeforeUpdate生命周期， hostRoot对清空容器内容，也就是#root里面的内容
     const shouldFireAfterActiveInstanceBlur = commitBeforeMutationEffects(
@@ -2218,7 +2218,7 @@ function commitRootImpl(
     // The next phase is the mutation phase, where we mutate the host tree.
     // commit第二个阶段dom突变，这个阶段主要处理一些flags为ref，contextReset，ref，placement， update，deletion，hydrating的fiber
     // 最终都会体现到对dom的增删和插入移位上
-    console.error('commit第二个阶段dom突变，这个阶段主要处理一些flags为ref，contextReset，ref，placement， update，deletion，hydrating的fiber \n 最终都会体现到对dom的增删和插入移位上')
+    console.warn('commitMutationEffects,完成副作用的执行,主要包括重置文本节点以及真实dom节点的插入、删除和更新等操作。此时切换curren树,新的工作树已建立完毕,老的树作为下一次的缓冲树使用(双缓冲结构)');
     commitMutationEffects(root, finishedWork, lanes);
     
     if (enableCreateEventHandleAPI) {
@@ -2233,7 +2233,7 @@ function commitRootImpl(
     // componentWillUnmount, but before the layout phase, so that the finished
     // work is current during componentDidMount/Update.
     // dom突变执行完成以后会替换当前root的current指向，达到更新页面dom效果
-    console.warn('dom突变执行完成以后会替换当前root的current指向，达到更新页面dom效果')
+    console.log('dom更新执行完成以后会替换当前root的current指向,更新页面dom');
     root.current = finishedWork;
 
     // The next phase is the layout phase, where we call effects that read
@@ -2248,6 +2248,7 @@ function commitRootImpl(
       markLayoutEffectsStarted(lanes);
     }
     // 这里执行layouteffect副作用
+    console.warn('commitLayoutEffects,执行类组件的componentDidMount和componentDidUpdate生命周期函数,执行函数组件useLayoutEffect的副作用函数,对finishedQueue上的effects回调进行处理');
     commitLayoutEffects(finishedWork, root, lanes);
     if (__DEV__) {
       if (enableDebugTracing) {

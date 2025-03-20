@@ -462,6 +462,7 @@ function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {
               : resolveDefaultProps(finishedWork.type, prevProps),
             prevState,
           );
+          console.log('class component执行getSnapshotBeforeUpdate生命周期函数');
           if (__DEV__) {
             const didWarnSet = ((didWarnAboutUndefinedSnapshotBeforeUpdate: any): Set<mixed>);
             if (snapshot === undefined && !didWarnSet.has(finishedWork.type)) {
@@ -480,6 +481,7 @@ function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {
       case HostRoot: {
         if (supportsMutation) {
           const root = finishedWork.stateNode;
+          console.log('fiberRootNode清除#root内容');
           // hostRoot清除#root内容
           clearContainer(root.containerInfo);
         }
@@ -545,6 +547,7 @@ function commitHookEffectListUnmount(
               setIsRunningInsertionEffect(true);
             }
           }
+          console.log(`执行${flags}的destroy函数`);
           safelyCallDestroy(finishedWork, nearestMountedAncestor, destroy);
           if (__DEV__) {
             if ((flags & HookInsertion) !== NoHookEffect) {
@@ -589,6 +592,7 @@ function commitHookEffectListMount(flags: HookFlags, finishedWork: Fiber) {
             setIsRunningInsertionEffect(true);
           }
         }
+        console.log(`执行${flags}的create函数并重置本轮effect的destroy函数`);
         effect.destroy = create();
         if (__DEV__) {
           if ((flags & HookInsertion) !== NoHookEffect) {
@@ -787,11 +791,13 @@ function commitLayoutEffectOnFiber(
               ) {
                 try {
                   startLayoutEffectTimer();
+                  console.log('执行componentDidMount生命周期函数');
                   instance.componentDidMount();
                 } finally {
                   recordLayoutEffectDuration(finishedWork);
                 }
               } else {
+                console.log('执行componentDidMount生命周期函数');
                 instance.componentDidMount();
               }
             } else {
@@ -840,6 +846,7 @@ function commitLayoutEffectOnFiber(
               ) {
                 try {
                   startLayoutEffectTimer();
+                  console.log('执行componentDidUpdate生命周期函数');
                   instance.componentDidUpdate(
                     prevProps,
                     prevState,
@@ -849,6 +856,7 @@ function commitLayoutEffectOnFiber(
                   recordLayoutEffectDuration(finishedWork);
                 }
               } else {
+                console.log('执行componentDidUpdate生命周期函数');
                 instance.componentDidUpdate(
                   prevProps,
                   prevState,
@@ -1146,6 +1154,7 @@ function hideOrUnhideAllChildren(finishedWork, isHidden) {
 }
 
 function commitAttachRef(finishedWork: Fiber) {
+  console.log('更新ref属性');
   const ref = finishedWork.ref;
   if (ref !== null) {
     const instance = finishedWork.stateNode;
@@ -1203,6 +1212,7 @@ function commitAttachRef(finishedWork: Fiber) {
 }
 
 function commitDetachRef(current: Fiber) {
+  console.log('置空ref');
   const currentRef = current.ref;
   if (currentRef !== null) {
     if (typeof currentRef === 'function') {
@@ -1590,7 +1600,6 @@ function commitPlacement(finishedWork: Fiber): void {
 
   // Recursively insert all host nodes into the parent.
   const parentFiber = getHostParentFiber(finishedWork);
-
   // Note: these two variables *must* always be updated together.
   switch (parentFiber.tag) {
     case HostComponent: {
@@ -1629,6 +1638,7 @@ function insertOrAppendPlacementNodeIntoContainer(
   before: ?Instance,
   parent: Container,
 ): void {
+  console.log('插入元素节点');
   const {tag} = node;
   const isHost = tag === HostComponent || tag === HostText;
   if (isHost) {
@@ -1864,6 +1874,7 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
           try {
             startLayoutEffectTimer();
             // 这里执行的是layouteffect
+            console.log('执行layoutEffect的destroy函数');
             commitHookEffectListUnmount(
               HookLayout | HookHasEffect,
               finishedWork,
@@ -1972,6 +1983,7 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
         const updatePayload: null | UpdatePayload = (finishedWork.updateQueue: any);
         finishedWork.updateQueue = null;
         if (updatePayload !== null) {
+          console.log('更新dom节点');
           commitUpdate(
             instance,
             updatePayload,
@@ -2175,6 +2187,7 @@ function commitMutationEffects_begin(root: FiberRoot, lanes: Lanes) {
 
     // TODO: Should wrap this in flags check, too, as optimization
     const deletions = fiber.deletions;
+    console.log('销毁元素');
     if (deletions !== null) {
       for (let i = 0; i < deletions.length; i++) {
         const childToDelete = deletions[i];
@@ -2355,7 +2368,6 @@ export function commitLayoutEffects(
   root: FiberRoot,
   committedLanes: Lanes,
 ): void {
-  console.log('log: commitLayoutEffects layouteffect副作用函数是在commit阶段同步执行的，而useeffect副作用函数是通过ensureRootIsScheduled调度执行, 副作用函数都是在dom突变之后执行')
   inProgressLanes = committedLanes;
   inProgressRoot = root;
   nextEffect = finishedWork;
