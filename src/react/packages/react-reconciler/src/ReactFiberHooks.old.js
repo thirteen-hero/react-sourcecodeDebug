@@ -373,6 +373,7 @@ export function renderWithHooks<Props, SecondArg>(
   secondArg: SecondArg,
   nextRenderLanes: Lanes,
 ): any {
+  console.log('执行renderWithHooks,入参有:', '\ncurrent:', current, '\nworkInProgress:', workInProgress, '\nComponent:', Component, '\nprops:', props, '\nsecondArg:', secondArg);
   renderLanes = nextRenderLanes;
   currentlyRenderingFiber = workInProgress;
   if (__DEV__) {
@@ -417,6 +418,7 @@ export function renderWithHooks<Props, SecondArg>(
       ReactCurrentDispatcher.current = HooksDispatcherOnMountInDEV;
     }
   } else {
+    console.log('current或current.memoizedState为null,则给ReactCurrentDispatcher.current赋值为HooksDispatcherOnMount,否则赋值为HooksDispatcherOnUpdate');
     ReactCurrentDispatcher.current =
       current === null || current.memoizedState === null
         ? HooksDispatcherOnMount
@@ -424,7 +426,7 @@ export function renderWithHooks<Props, SecondArg>(
   }
 
   let children = Component(props, secondArg);
-
+  console.log('执行函数组件,接收函数组件即将渲染的element', children);
   // Check if there was a render phase update
   if (didScheduleRenderPhaseUpdateDuringThisPass) {
     // Keep rendering in a loop for as long as render phase updates continue to
@@ -470,7 +472,6 @@ export function renderWithHooks<Props, SecondArg>(
   // We can assume the previous dispatcher is always this one, since we set it
   // at the beginning of the render phase and there's no re-entrance.
   ReactCurrentDispatcher.current = ContextOnlyDispatcher;
-
   if (__DEV__) {
     workInProgress._debugHookTypes = hookTypesDev;
   }
@@ -543,7 +544,6 @@ export function renderWithHooks<Props, SecondArg>(
       }
     }
   }
-  console.log(current, workInProgress, ReactCurrentDispatcher, nextRenderLanes,children, 'log: renderWithHooks cur wor dis lan child' )
   return children;
 }
 
@@ -1536,6 +1536,7 @@ function rerenderState<S>(
 }
 
 function pushEffect(tag, create, destroy, deps) {
+  console.log('执行pushEffect');
   const effect: Effect = {
     tag,
     create,
@@ -1549,6 +1550,7 @@ function pushEffect(tag, create, destroy, deps) {
     componentUpdateQueue = createFunctionComponentUpdateQueue();
     currentlyRenderingFiber.updateQueue = (componentUpdateQueue: any);
     componentUpdateQueue.lastEffect = effect.next = effect;
+    console.log('componentUpdateQueue为null,新建componentUpdateQueue,建立effect的链式关系,并挂载到新建componentUpdateQueue的lastEffect上,componentUpdateQueue:', componentUpdateQueue);
   } else {
     const lastEffect = componentUpdateQueue.lastEffect;
     if (lastEffect === null) {
@@ -1559,6 +1561,7 @@ function pushEffect(tag, create, destroy, deps) {
       effect.next = firstEffect;
       componentUpdateQueue.lastEffect = effect;
     }
+    console.log('componentUpdateQueue不为null,更新lastEffect、effect、firstEffect的链式关系,并挂载到componentUpdateQueue的lastEffect上,componentUpdateQueue:', componentUpdateQueue);
   }
   return effect;
 }
@@ -1658,8 +1661,9 @@ function updateRef<T>(initialValue: T): {|current: T|} {
 }
 
 function mountEffectImpl(fiberFlags, hookFlags, create, deps): void {
+  console.log('mountEffect,函数组件初次执行useEffect');
   const hook = mountWorkInProgressHook();
-  console.log(hook, 'log： 初次执行useeffect时候，会创建hooks和之前的hooks连接起来，如果当前fiber的updateQueue为空的话就会为其创建一个updatequeue，然后再创建一个effect一个环状链表每个useEffect都会和之前的形成一个环，并把effect挂载在更新队列的lasteffect上')
+  console.log('将当前hook信息挂载到workInProgressHook链表上');
   const nextDeps = deps === undefined ? null : deps;
   //给当前fiber打上一个flags
   currentlyRenderingFiber.flags |= fiberFlags;
@@ -1669,6 +1673,7 @@ function mountEffectImpl(fiberFlags, hookFlags, create, deps): void {
     undefined,
     nextDeps,
   );
+  console.log('将维护好的effect环挂载在hook.memoizedState上,hook:', hook);
 }
 
 function updateEffectImpl(fiberFlags, hookFlags, create, deps): void {

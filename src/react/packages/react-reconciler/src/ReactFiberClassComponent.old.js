@@ -316,6 +316,7 @@ function checkShouldComponentUpdate(
 ) {
   const instance = workInProgress.stateNode;
   if (typeof instance.shouldComponentUpdate === 'function') {
+    console.log('执行shouldComponentUpdate生命周期函数');
     let shouldUpdate = instance.shouldComponentUpdate(
       newProps,
       newState,
@@ -351,6 +352,7 @@ function checkShouldComponentUpdate(
   }
 
   if (ctor.prototype && ctor.prototype.isPureReactComponent) {
+    console.log('当前组件是pureComponent,对oldProps、newProps和oldState、newState进行浅比较');
     return (
       !shallowEqual(oldProps, newProps) || !shallowEqual(oldState, newState)
     );
@@ -653,6 +655,7 @@ function constructClassInstance(
       : emptyContextObject;
   }
 
+  console.log('new ctor创建一个类组件实例')
   let instance = new ctor(props, context);
   // Instantiate twice to help detect side-effects.
   if (__DEV__) {
@@ -669,10 +672,12 @@ function constructClassInstance(
     }
   }
 
+  console.log('获取到类组件实例中的state并赋值给workInProgress.memoizedState');
   const state = (workInProgress.memoizedState =
     instance.state !== null && instance.state !== undefined
       ? instance.state
       : null);
+  console.log('将类组件实例与workInProgress绑定');
   adoptClassInstance(workInProgress, instance);
 
   if (__DEV__) {
@@ -798,6 +803,7 @@ function callComponentWillReceiveProps(
 ) {
   const oldState = instance.state;
   if (typeof instance.componentWillReceiveProps === 'function') {
+    console.log('执行componentWillReceiveProps生命周期函数');
     instance.componentWillReceiveProps(newProps, nextContext);
   }
   if (typeof instance.UNSAFE_componentWillReceiveProps === 'function') {
@@ -833,13 +839,16 @@ function mountClassInstance(
     checkClassInstance(workInProgress, ctor, newProps);
   }
 
+  // 获取类组件实例 state 和 props
   const instance = workInProgress.stateNode;
   instance.props = newProps;
   instance.state = workInProgress.memoizedState;
   instance.refs = emptyRefsObject;
 
+  // 初始化更新列表
   initializeUpdateQueue(workInProgress);
 
+  // 获取上下文
   const contextType = ctor.contextType;
   if (typeof contextType === 'object' && contextType !== null) {
     instance.context = readContext(contextType);
@@ -881,6 +890,7 @@ function mountClassInstance(
 
   instance.state = workInProgress.memoizedState;
 
+  console.log('执行getDerivedStateFromProps静态生命周期函数,传入props和state,返回一个对象来更新state');
   const getDerivedStateFromProps = ctor.getDerivedStateFromProps;
   if (typeof getDerivedStateFromProps === 'function') {
     applyDerivedStateFromProps(
@@ -900,6 +910,7 @@ function mountClassInstance(
     (typeof instance.UNSAFE_componentWillMount === 'function' ||
       typeof instance.componentWillMount === 'function')
   ) {
+    console.log('执行componentWillMount生命周期函数');
     callComponentWillMount(workInProgress, instance);
     // If we had additional state updates during this life-cycle, let's
     // process them now.
@@ -907,6 +918,7 @@ function mountClassInstance(
     instance.state = workInProgress.memoizedState;
   }
 
+  // 设置componentDidMount的优先级
   if (typeof instance.componentDidMount === 'function') {
     let fiberFlags: Flags = Update;
     if (enableSuspenseLayoutEffectSemantics) {
@@ -1006,6 +1018,7 @@ function resumeMountClassInstance(
   }
 
   if (typeof getDerivedStateFromProps === 'function') {
+    console.log('执行getDerivedStateFromProps静态生命周期函数,传入props和state,返回一个对象来更新state');
     applyDerivedStateFromProps(
       workInProgress,
       ctor,
@@ -1174,6 +1187,7 @@ function updateClassInstance(
         unresolvedOldProps !== current.memoizedProps ||
         oldState !== current.memoizedState
       ) {
+        console.log('标记componentDidUpdate的flag');
         workInProgress.flags |= Update;
       }
     }
@@ -1182,6 +1196,7 @@ function updateClassInstance(
         unresolvedOldProps !== current.memoizedProps ||
         oldState !== current.memoizedState
       ) {
+        console.log('标记getSnapshotBeforeUpdate的flag');
         workInProgress.flags |= Snapshot;
       }
     }
@@ -1189,6 +1204,7 @@ function updateClassInstance(
   }
 
   if (typeof getDerivedStateFromProps === 'function') {
+    console.log('执行getDerivedStateFromProps生命周期函数');
     applyDerivedStateFromProps(
       workInProgress,
       ctor,

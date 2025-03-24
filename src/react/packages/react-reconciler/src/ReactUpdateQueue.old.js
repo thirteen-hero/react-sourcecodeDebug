@@ -183,6 +183,7 @@ export function cloneUpdateQueue<State>(
   current: Fiber,
   workInProgress: Fiber,
 ): void {
+  console.log('将current的updateQueue(其中存放了element)复制一份给workInProgress,实际上开启了新的内存,把内容复制了一份,防止后续修改的时候互相影响');
   // Clone the update queue from current. Unless it's already a clone.
   const queue: UpdateQueue<State> = (workInProgress.updateQueue: any);
   const currentQueue: UpdateQueue<State> = (current.updateQueue: any);
@@ -490,7 +491,7 @@ export function processUpdateQueue<State>(
       lastBaseUpdate.next = firstPendingUpdate;
     }
     lastBaseUpdate = lastPendingUpdate;
-
+    console.log('更新workInProgress的updateQueue', queue);
     // If there's a current queue, and it's different from the base queue, then
     // we need to transfer the updates to that queue, too. Because the base
     // queue is a singly-linked list with no cycles, we can append to both
@@ -508,10 +509,10 @@ export function processUpdateQueue<State>(
           currentLastBaseUpdate.next = firstPendingUpdate;
         }
         currentQueue.lastBaseUpdate = lastPendingUpdate;
+        console.log('更新current的updateQueue', currentQueue);
       }
     }
   }
-
   // These values may change as we process the queue.
   if (firstBaseUpdate !== null) {
     // Iterate through the list of updates to compute the result.
@@ -649,6 +650,7 @@ export function processUpdateQueue<State>(
     markSkippedUpdateLanes(newLanes);
     workInProgress.lanes = newLanes;
     workInProgress.memoizedState = newState;
+    console.log('更新workInProgress的lanes和memoizedState', workInProgress);
   }
 
   if (__DEV__) {

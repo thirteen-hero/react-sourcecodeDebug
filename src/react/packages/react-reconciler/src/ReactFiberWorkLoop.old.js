@@ -881,7 +881,10 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
         schedulerPriorityLevel = NormalSchedulerPriority;
         break;
     }
-    console.log('不是同步优先级,走并发模式进行reconcile过程,它可以在运行过程中被打断,通过lanesToEventPriority将lane优先级转为调度的优先级,传入调度函数中。');
+    console.log(
+      '不是同步优先级,走并发模式进行reconcile过程,它可以在运行过程中被打断,通过lanesToEventPriority将lane优先级转为调度的优先级,传入调度函数中。', 
+      'schedulerPriorityLevel:',
+      schedulerPriorityLevel);
     //调用调度更新
     newCallbackNode = scheduleCallback(
       schedulerPriorityLevel,
@@ -1538,6 +1541,7 @@ function prepareFreshStack(root: FiberRoot, lanes: Lanes): Fiber {
   }
   workInProgressRoot = root;
   const rootWorkInProgress = createWorkInProgress(root.current, null);
+  console.warn('根据当前rootFiberNode.current创建/更新一棵新的workInProgress树', rootWorkInProgress);
   workInProgress = rootWorkInProgress;
   workInProgressRootRenderLanes = subtreeRenderLanes = workInProgressRootIncludedLanes = lanes;
   workInProgressRootExitStatus = RootInProgress;
@@ -1802,7 +1806,7 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
 // The work loop is an extremely hot path. Tell Closure not to inline it.
 /** @noinline */
 function workLoopSync() {
-  console.warn('当前正在执行workLoopSync,不会进行时间分片,开始reconciler', workInProgress);
+  console.warn('当前正在执行workLoopSync,不会进行时间分片,开始reconciler,通过dom diff,构建整个workInProgress结构');
   // Already timed out, so perform work without checking if we need to yield.
   while (workInProgress !== null) {
     performUnitOfWork(workInProgress);
@@ -1893,7 +1897,7 @@ function renderRootConcurrent(root: FiberRoot, lanes: Lanes) {
 /** @noinline */
 function workLoopConcurrent() {
   // Perform work until Scheduler asks us to yield
-  console.warn('当前正在执行workLoopConcurrent,会进行时间分片,开始reconciler', workInProgress);
+  console.warn('当前正在执行workLoopConcurrent,会进行时间分片,开始reconciler,通过dom diff,构建整个workInProgress结构');
   while (workInProgress !== null && !shouldYield()) {
     performUnitOfWork(workInProgress);
   }
@@ -1910,15 +1914,17 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   let next;
   if (enableProfilerTimer && (unitOfWork.mode & ProfileMode) !== NoMode) {
     startProfilerTimer(unitOfWork);
+    console.warn('当前开始beginwork的节点', unitOfWork);
     next = beginWork(current, unitOfWork, subtreeRenderLanes);
     stopProfilerTimerIfRunningAndRecordDelta(unitOfWork, true);
   } else {
+    console.warn('当前开始beginwork的节点', unitOfWork);
     next = beginWork(current, unitOfWork, subtreeRenderLanes);
   }
-
   resetCurrentDebugFiberInDEV();
   unitOfWork.memoizedProps = unitOfWork.pendingProps;
   if (next === null) {
+    console.warn('当前节点没有子节点,开始completeUnitOfWork');
     // If this doesn't spawn new work, complete the current work.
     completeUnitOfWork(unitOfWork);
   } else {

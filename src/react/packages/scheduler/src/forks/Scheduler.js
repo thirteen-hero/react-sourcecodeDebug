@@ -189,7 +189,7 @@ function flushWork(hasTimeRemaining, initialTime) {
 }
 function workLoop(hasTimeRemaining, initialTime) { // 
   console.warn('在workLoop函数中循环执行taskQueue中的任务');
-  console.warn(`
+  console.log(`
     在scheduler调度中通过workLoop循环taskQueue执行调度任务。
     workLoop首先会检查timerQueue中有没有要过期的任务加入到taskQueue中。
     取出task中的调度任务,判断当前任务执行的时间是否超过一帧渲染的时间和用户是否与界面有交互来判断是否应该中断当前任务。
@@ -201,7 +201,6 @@ function workLoop(hasTimeRemaining, initialTime) { //
   //检查是否有过期任务需要添加到taskQueue中执行的
   advanceTimers(currentTime);
   currentTask = peek(taskQueue);
-  console.log('本次调度中第一个被执行的任务', currentTask);
   while (
     currentTask !== null &&
     !(enableSchedulerDebugging && isSchedulerPaused)
@@ -218,7 +217,7 @@ function workLoop(hasTimeRemaining, initialTime) { //
     }
     const callback = currentTask.callback;
     if (typeof callback === 'function') {
-      console.log('当前任务是上一轮被中断的任务', currentTask);
+      console.log('当前正在执行的任务', currentTask);
       currentTask.callback = null;
       currentPriorityLevel = currentTask.priorityLevel;
       const didUserCallbackTimeout = currentTask.expirationTime <= currentTime;
@@ -229,7 +228,7 @@ function workLoop(hasTimeRemaining, initialTime) { //
       currentTime = getCurrentTime();
       if (typeof continuationCallback === 'function') {
         // 这里表示任务没完成被中断了，则将返回的函数作为新的回调在下一次循环执行
-        console.log('当前任务在本轮仍然未执行完,等待在下一轮继续执行', currentTask);
+        console.log('当前任务被中断了,等待在下一次调度中继续执行', currentTask);
         currentTask.callback = continuationCallback;
         if (enableProfiling) {
           markTaskYield(currentTask, currentTime);// 标志当前任务被中断
@@ -607,7 +606,7 @@ const performWorkUntilDeadline = () => { // 调度时候执行的函数
         // If there's more work, schedule the next message event at the end
         // of the preceding one.
         // 被中断了重新发起调度
-        console.log('发起了一次新的调度');
+        console.log('上次调度中taskQueue中的任务还没执行完,发起了一次新的调度继续执行');
         schedulePerformWorkUntilDeadline();
       } else {
         // hasMoreWork为false表示taskqueue执行完了
@@ -667,7 +666,6 @@ function requestHostCallback(callback) {// 过期任务请求调度
   //判断是否有messageChanel在运行
   if (!isMessageLoopRunning) { //初始为false
     isMessageLoopRunning = true;
-    console.log('没有进行中的调度,开启一个新调度');
     schedulePerformWorkUntilDeadline();
   }
 }
