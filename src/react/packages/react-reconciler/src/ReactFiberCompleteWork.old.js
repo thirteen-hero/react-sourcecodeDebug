@@ -213,7 +213,6 @@ let updateHostComponent;
 let updateHostText;
 if (supportsMutation) {
   // Mutation mode
-
   appendAllChildren = function(
     parent: Instance,
     workInProgress: Fiber,
@@ -657,7 +656,7 @@ function bubbleProperties(completedWork: Fiber) {
 
   let newChildLanes = NoLanes;
   let subtreeFlags = NoFlags;
-
+  console.log('合并当前节点及其子节点、兄弟节点优先级');
   if (!didBailout) {
     // Bubble up the earliest expiration time.
     if (enableProfilerTimer && (completedWork.mode & ProfileMode) !== NoMode) {
@@ -834,6 +833,8 @@ function completeWork(
   workInProgress: Fiber,
   renderLanes: Lanes,
 ): Fiber | null {
+  console.log('调用completeWork函数', '\ncurrent:', current, '\nworkInProgress:', workInProgress);
+  console.log('根据workInProgress.tag分情况处理', workInProgress.tag);
   const newProps = workInProgress.pendingProps;
   // Note: This intentionally doesn't check if we're hydrating because comparing
   // to the current tree provider fiber is just as fast and less error-prone.
@@ -862,6 +863,7 @@ function completeWork(
       return null;
     }
     case HostRoot: {
+      console.log('当前节点是根节点');
       const fiberRoot = (workInProgress.stateNode: FiberRoot);
 
       if (enableTransitionTracing) {
@@ -941,6 +943,7 @@ function completeWork(
       return null;
     }
     case HostComponent: {
+      console.log('当前节点是原生html节点');
       popHostContext(workInProgress);
       const rootContainerInstance = getRootHostContainer();
       const type = workInProgress.type;
@@ -1002,7 +1005,7 @@ function completeWork(
           appendAllChildren(instance, workInProgress, false, false);
 
           workInProgress.stateNode = instance;
-
+          console.log('当前节点current为null,创建一个新的current并建立兄弟父子关系和workInProgress关系,创建好的current:', instance);
           // Certain renderers require commit-time effects for initial mount.
           // (eg DOM renderer supports auto-focus for certain elements).
           // Make sure such renderers get scheduled for later work.
@@ -1022,6 +1025,7 @@ function completeWork(
         if (workInProgress.ref !== null) {
           // If there is a ref on a host node we need to schedule a callback
           markRef(workInProgress);
+          console.log('绑定ref');
         }
       }
       bubbleProperties(workInProgress);

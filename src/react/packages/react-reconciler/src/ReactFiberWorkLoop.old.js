@@ -1935,6 +1935,7 @@ function performUnitOfWork(unitOfWork: Fiber): void {
 }
 //归并阶段
 function completeUnitOfWork(unitOfWork: Fiber): void {
+  console.warn('开始completeUnitOfWork的节点:', unitOfWork);
   // Attempt to complete the current unit of work, then move to the next
   // sibling. If there are no more siblings, return to the parent fiber.
   let completedWork = unitOfWork;
@@ -1944,7 +1945,6 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
     // need an additional field on the work in progress.
     const current = completedWork.alternate;
     const returnFiber = completedWork.return;
-
     // Check if the work completed or if something threw.
     if ((completedWork.flags & Incomplete) === NoFlags) {
       setCurrentDebugFiberInDEV(completedWork);
@@ -2015,22 +2015,24 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
         return;
       }
     }
-
     const siblingFiber = completedWork.sibling;
     if (siblingFiber !== null) {
       // If there is more work to do in this returnFiber, do that next.
       workInProgress = siblingFiber;
+      console.log('当前节点有兄弟节点,接下来开始处理兄弟节点', siblingFiber);
       return;
     }
     // Otherwise, return to the parent
     completedWork = returnFiber;
     // Update the next thing we're working on in case something throws.
     workInProgress = completedWork;
+    console.warn('当前节点没有兄弟节点,返回父节点,completeWork结束', completedWork);
   } while (completedWork !== null);
 
   // We've reached the root.
   if (workInProgressRootExitStatus === RootInProgress) {
     workInProgressRootExitStatus = RootCompleted;
+    console.log('当前completeWork已抵达根节点');
   }
 }
 //提交阶段
