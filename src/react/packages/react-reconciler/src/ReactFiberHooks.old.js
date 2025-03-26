@@ -1563,6 +1563,7 @@ function pushEffect(tag, create, destroy, deps) {
     }
     console.log('componentUpdateQueue不为null,更新lastEffect、effect、firstEffect的链式关系,并挂载到componentUpdateQueue的lastEffect上,componentUpdateQueue:', componentUpdateQueue);
   }
+  console.log('componentUpdateQueue即当前fiber的updateQueue');
   return effect;
 }
 
@@ -1661,7 +1662,7 @@ function updateRef<T>(initialValue: T): {|current: T|} {
 }
 
 function mountEffectImpl(fiberFlags, hookFlags, create, deps): void {
-  console.log('mountEffect,函数组件初次执行useEffect');
+  console.log('mountEffect,函数组件挂载初次执行effect');
   const hook = mountWorkInProgressHook();
   console.log('将当前hook信息挂载到workInProgressHook链表上');
   const nextDeps = deps === undefined ? null : deps;

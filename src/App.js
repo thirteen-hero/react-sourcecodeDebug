@@ -1,31 +1,53 @@
 import React, { useState, useEffect, useInsertionEffect, useLayoutEffect } from 'react';
 import './App.css';
 
+const InApp = () => {
+  useEffect(() => {
+    console.log('InApp useEffect', 'create');
+    return () => {
+      console.log('InApp useEffect', 'destroy');
+    }
+  }, []);
+
+  useInsertionEffect(() => {
+    console.log('InApp useInsertionEffect', 'create');
+    return () => {
+      console.log('InApp useInsertionEffect', 'destroy');
+    }
+  }, []);
+
+  useLayoutEffect(() => {
+    console.log('InApp useLayoutEffect', 'create');
+    return () => {
+      console.log('InApp useLayoutEffect', 'destroy');
+    }
+  }, []);
+
+  return <div>inApp</div>
+}
+
 const App = () => {
   const [num, setNum] = useState(0);
   const [number, setNumber] = useState(0);
 
   useEffect(() => {
-    handleClick();
-    console.log('useEffect', 222);
+    console.log('App useEffect', 'create');
     return () => {
-      console.log('useEffect', 111);
+      console.log('App useEffect', 'destroy');
     }
   }, []);
 
   useInsertionEffect(() => {
-    handleClick();
-    console.log('useInsertionEffect', 222);
+    console.log('App useInsertionEffect', 'create');
     return () => {
-      console.log('useInsertionEffect', 111);
+      console.log('App useInsertionEffect', 'destroy');
     }
   }, []);
 
   useLayoutEffect(() => {
-    handleClick();
-    console.log('useLayoutEffect', 222);
+    console.log('App useLayoutEffect', 'create');
     return () => {
-      console.log('useLayoutEffect', 111);
+      console.log('App useLayoutEffect', 'destroy');
     }
   }, []);
 
@@ -39,6 +61,7 @@ const App = () => {
       <div onClick = {handleClick}>
         <p>{`num: ${num}`}</p>
         <p>{`number: ${number}`}</p>
+        <InApp />
       </div>
     </>
   )

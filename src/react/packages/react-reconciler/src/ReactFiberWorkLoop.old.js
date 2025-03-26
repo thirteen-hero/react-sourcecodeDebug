@@ -2059,7 +2059,7 @@ function commitRootImpl(
   recoverableErrors: null | Array<mixed>,
   renderPriorityLevel: EventPriority,
 ) {
-  console.warn('开始commit');
+  console.warn('开始commit', root);
   do {
     // `flushPassiveEffects` will call `flushSyncUpdateQueue` at the end, which
     // means `flushPassiveEffects` will sometimes result in additional
@@ -2068,7 +2068,7 @@ function commitRootImpl(
     // TODO: Might be better if `flushPassiveEffects` did not automatically
     // flush synchronous work at the end, to avoid factoring hazards like this.
     // 这个函数很重要 清除effect
-    console.log('处理useEffect相关逻辑');
+    console.log('调用flushPassiveEffects执行完所有effect的任务');
     flushPassiveEffects();
   } while (rootWithPendingPassiveEffects !== null);
   flushRenderPhaseStrictModeWarningsInDEV();
@@ -2112,6 +2112,7 @@ function commitRootImpl(
       }
     }
   }
+  // 重置fiberRoot
   root.finishedWork = null;
   root.finishedLanes = NoLanes;
 
@@ -2132,6 +2133,7 @@ function commitRootImpl(
   let remainingLanes = mergeLanes(finishedWork.lanes, finishedWork.childLanes);
   markRootFinished(root, remainingLanes);
 
+  // 重置全局变量
   if (root === workInProgressRoot) {
     // We can reset these now that they are finished.
     workInProgressRoot = null;
@@ -2149,6 +2151,7 @@ function commitRootImpl(
   // TODO: Delete all other places that schedule the passive effect callback
   // They're redundant.
   // 表示当前渲染触发了被动渲染也就是flags为PassiveMask，也就是带有副作用effect的fiber，会新开调度执行也就是异步执行
+  // 处理useEffect相关内容
   if (
     (finishedWork.subtreeFlags & PassiveMask) !== NoFlags ||
     (finishedWork.flags & PassiveMask) !== NoFlags
@@ -2241,8 +2244,8 @@ function commitRootImpl(
     // componentWillUnmount, but before the layout phase, so that the finished
     // work is current during componentDidMount/Update.
     // dom突变执行完成以后会替换当前root的current指向，达到更新页面dom效果
-    console.log('dom更新执行完成以后会替换当前root的current指向,更新页面dom');
     root.current = finishedWork;
+    console.log('dom更新执行完成以后替换当前root的current指向,更新页面dom', root.current);
 
     // The next phase is the layout phase, where we call effects that read
     // the host tree after it's been mutated. The idiomatic use case for this is

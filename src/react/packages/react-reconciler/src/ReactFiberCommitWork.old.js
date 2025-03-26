@@ -348,6 +348,7 @@ function commitBeforeMutationEffects_begin() {
       // TODO: Should wrap this in flags check, too, as optimization
       const deletions = fiber.deletions;
       if (deletions !== null) {
+        console.log('当前节点中存在上一节点标记删除的子节点,处理删除后的fucus和blur逻辑');
         for (let i = 0; i < deletions.length; i++) {
           const deletion = deletions[i];
           commitBeforeMutationEffectsDeletion(deletion);
@@ -362,8 +363,9 @@ function commitBeforeMutationEffects_begin() {
     ) {
       ensureCorrectReturnPointer(child, fiber);
       nextEffect = child;
+      console.log('当前节点的子节点存在BeforeMutation阶段相关的flags标记且子节点不为null,操作子节点执行commitBeforeMutationEffects_begin', nextEffect);
     } else {
-      // 一般除了原生dom节点fiberRoot和hostRoot，都会走到这里
+      console.log('当前节点的子节点不存在BeforeMutation阶段相关的flags标记或子节点为null,操作当前节点执行commitBeforeMutationEffects_complete', nextEffect);
       commitBeforeMutationEffects_complete();
     }
   }
@@ -374,6 +376,7 @@ function commitBeforeMutationEffects_complete() {
     const fiber = nextEffect;
     setCurrentDebugFiberInDEV(fiber);
     try {
+      console.log('执行commitBeforeMutationEffectsOnFiber,当前fiber:', fiber);
       // commit 在突变之前的阶段真正执行的函数
       commitBeforeMutationEffectsOnFiber(fiber);
     } catch (error) {
@@ -386,17 +389,21 @@ function commitBeforeMutationEffects_complete() {
     if (sibling !== null) {
       ensureCorrectReturnPointer(sibling, fiber.return);
       nextEffect = sibling;
+      console.log('当前节点有兄弟节点,继续操作兄弟节点执行commitBeforeMutationEffects_begin', nextEffect);
       return;
     }
-
     nextEffect = fiber.return;
+    if (nextEffect) {
+      console.log('当前节点没有兄弟节点,操作父节点执行commitBeforeMutationEffectsOnFiber');
+    } else {
+      console.warn('当前节点为根节点,commitBeforeMutationEffects执行完毕');
+    }
   }
 }
 
 function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {
   const current = finishedWork.alternate;
   const flags = finishedWork.flags;
-
   if (enableCreateEventHandleAPI) {
     if (!shouldFireAfterActiveInstanceBlur && focusedInstanceHandle !== null) {
       // Check to see if the focused element was inside of a hidden (Suspense) subtree.
@@ -414,7 +421,7 @@ function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {
   // 只处理带Snapshot的flags的fiber
   if ((flags & Snapshot) !== NoFlags) {
     setCurrentDebugFiberInDEV(finishedWork);
-
+    console.log('当前节点为带snapShot标记的节点', finishedWork);
     switch (finishedWork.tag) {
       case FunctionComponent:
       case ForwardRef:
@@ -422,6 +429,7 @@ function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {
         break;
       }
       case ClassComponent: {
+        console.log('当前节点为类组件');
         if (current !== null) {
           const prevProps = current.memoizedProps;
           const prevState = current.memoizedState;
@@ -479,6 +487,7 @@ function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {
         break;
       }
       case HostRoot: {
+        console.log('当前节点是根节点');
         if (supportsMutation) {
           const root = finishedWork.stateNode;
           console.log('fiberRootNode清除#root内容');
@@ -503,6 +512,7 @@ function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {
 
     resetCurrentDebugFiberInDEV();
   }
+  console.log('当前节点不是带snapShot标记的节点,不处理');
 }
 
 function commitBeforeMutationEffectsDeletion(deletion: Fiber) {
@@ -547,7 +557,7 @@ function commitHookEffectListUnmount(
               setIsRunningInsertionEffect(true);
             }
           }
-          console.log(`执行${flags}的destroy函数`);
+          console.log('执行effect的destroy函数');
           safelyCallDestroy(finishedWork, nearestMountedAncestor, destroy);
           if (__DEV__) {
             if ((flags & HookInsertion) !== NoHookEffect) {
@@ -592,7 +602,7 @@ function commitHookEffectListMount(flags: HookFlags, finishedWork: Fiber) {
             setIsRunningInsertionEffect(true);
           }
         }
-        console.log(`执行${flags}的create函数并重置本轮effect的destroy函数`);
+        console.log(`执行effect的create函数并重置本轮effect的destroy函数`);
         effect.destroy = create();
         if (__DEV__) {
           if ((flags & HookInsertion) !== NoHookEffect) {
@@ -716,7 +726,9 @@ function commitLayoutEffectOnFiber(
   finishedWork: Fiber,
   committedLanes: Lanes,
 ): void {
+  console.log('执行commitLayoutEffectOnFiber,当前节点为',finishedWork);
   if ((finishedWork.flags & LayoutMask) !== NoFlags) {
+    console.log('当前节点存在layout阶段相关的flags标记,根据fiber.tag分情况处理', finishedWork.tag);
     switch (finishedWork.tag) {
       case FunctionComponent:
       case ForwardRef:
@@ -930,18 +942,19 @@ function commitLayoutEffectOnFiber(
         break;
       }
       case HostComponent: {
+        console.log('当前节点为DOM元素节点,current:', current);
         const instance: Instance = finishedWork.stateNode;
-
         // Renderers may schedule work to be done after host components are mounted
         // (eg DOM renderer may schedule auto-focus for inputs and form controls).
         // These effects should only be committed when components are first mounted,
         // aka when there is no current/alternate.
         if (current === null && finishedWork.flags & Update) {
+          console.log('当前节点current为null且当前节点存在标识update的flags');
           const type = finishedWork.type;
           const props = finishedWork.memoizedProps;
           commitMount(instance, type, props, finishedWork);
         }
-
+        console.log('当前节点current不为null,不处理');
         break;
       }
       case HostText: {
@@ -1041,6 +1054,7 @@ function commitLayoutEffectOnFiber(
       }
     } else {
       if (finishedWork.flags & Ref) {
+        console.log('当前节点存在ref相关的flags属性');
         commitAttachRef(finishedWork);
       }
     }
@@ -1600,10 +1614,13 @@ function commitPlacement(finishedWork: Fiber): void {
 
   // Recursively insert all host nodes into the parent.
   const parentFiber = getHostParentFiber(finishedWork);
+  console.log('当前操作的节点', finishedWork, '当前节点的父节点', parentFiber);
+  console.log('根据父节点的tag分情况处理', parentFiber.tag);
   // Note: these two variables *must* always be updated together.
   switch (parentFiber.tag) {
     case HostComponent: {
       const parent: Instance = parentFiber.stateNode;
+      console.log('当前节点的父节点为元素节点,获取父节点的stateNode', parent);
       if (parentFiber.flags & ContentReset) {
         // Reset the text content of the parent before doing any insertions
         resetTextContent(parent);
@@ -1620,7 +1637,10 @@ function commitPlacement(finishedWork: Fiber): void {
     case HostRoot:
     case HostPortal: {
       const parent: Container = parentFiber.stateNode.containerInfo;
+      console.log('当前节点的父节点为根节点,获取rootFiber.stateNode.containerInfo');
       const before = getHostSibling(finishedWork);
+      console.log('获取当前节点的兄弟节点', before);
+      console.log('将当前节点、当前节点的父节点及兄弟节点插入container容器');
       insertOrAppendPlacementNodeIntoContainer(finishedWork, before, parent);
       break;
     }
@@ -1638,14 +1658,17 @@ function insertOrAppendPlacementNodeIntoContainer(
   before: ?Instance,
   parent: Container,
 ): void {
-  console.log('插入元素节点');
+  console.log('当前要插入的节点', node);
   const {tag} = node;
   const isHost = tag === HostComponent || tag === HostText;
   if (isHost) {
+    console.log('当前要插入的节点是DOM元素节点或文本节点');
     const stateNode = node.stateNode;
     if (before) {
+      console.log('当前节点有兄弟节点', before);
       insertInContainerBefore(parent, stateNode, before);
     } else {
+      console.log('当前节点没有兄弟节点');
       appendChildToContainer(parent, stateNode);
     }
   } else if (tag === HostPortal) {
@@ -1653,15 +1676,20 @@ function insertOrAppendPlacementNodeIntoContainer(
     // down its children. Instead, we'll get insertions from each child in
     // the portal directly.
   } else {
+    console.log('当前要插入的节点是react节点');
     const child = node.child;
     if (child !== null) {
+      console.log('当前节点有子节点,插入子节点', child);
       insertOrAppendPlacementNodeIntoContainer(child, before, parent);
       let sibling = child.sibling;
       while (sibling !== null) {
+        console.log('当前节点有兄弟节点,插入兄弟节点', sibling);
         insertOrAppendPlacementNodeIntoContainer(sibling, before, parent);
         sibling = sibling.sibling;
       }
+      console.log('当前节点没有兄弟节点了');
     }
+    console.log('当前节点没有子节点了');
   }
 }
 
@@ -1925,7 +1953,6 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
     commitContainer(finishedWork);
     return;
   }
-
   switch (finishedWork.tag) {
     case FunctionComponent:
     case ForwardRef:
@@ -2184,11 +2211,10 @@ export function commitMutationEffects(
 function commitMutationEffects_begin(root: FiberRoot, lanes: Lanes) {
   while (nextEffect !== null) {
     const fiber = nextEffect;
-
     // TODO: Should wrap this in flags check, too, as optimization
     const deletions = fiber.deletions;
-    console.log('销毁元素');
     if (deletions !== null) {
+      console.log('当前节点上有需要删除的子节点,将需要删除的的子节点的return置为null');
       for (let i = 0; i < deletions.length; i++) {
         const childToDelete = deletions[i];
         try {
@@ -2204,8 +2230,10 @@ function commitMutationEffects_begin(root: FiberRoot, lanes: Lanes) {
     if ((fiber.subtreeFlags & MutationMask) !== NoFlags && child !== null) {
       ensureCorrectReturnPointer(child, fiber);
       nextEffect = child;
+      console.log('当前节点的子节点存在Mutation阶段相关的flags标记且子节点不为null,操作子节点继续执行commitMutationEffects_begin', nextEffect);
     } else {
       // 执行dom突变一般也是除了原生节点和fiberRoot或hostRoot才会执行
+      console.log('当前节点的子节点不存在Mutation阶段相关的flags标记或子节点为null,操作当前节点执行commitMutationEffects_complete', nextEffect);
       commitMutationEffects_complete(root, lanes);
     }
   }
@@ -2228,10 +2256,15 @@ function commitMutationEffects_complete(root: FiberRoot, lanes: Lanes) {
     if (sibling !== null) {
       ensureCorrectReturnPointer(sibling, fiber.return);
       nextEffect = sibling;
+      console.log('当前节点有兄弟节点,操作兄弟节点执行commitMutationEffects_begin', nextEffect);
       return;
     }
-
     nextEffect = fiber.return;
+    if (nextEffect) {
+      console.log('当前节点没有兄弟节点,操作父节点执行commitMutationEffectsOnFiber', nextEffect);
+    } else {
+      console.warn('当前节点为根节点,commitMutationEffects执行完毕');
+    }
   }
 }
 // 这里是执行dom突变的主要函数会根据fiber的flags进行不同的处理
@@ -2240,17 +2273,18 @@ function commitMutationEffectsOnFiber(
   root: FiberRoot,
   lanes: Lanes,
 ) {
+  console.log('执行commitMutationEffectsOnFiber,当前fiber:', finishedWork);
   // TODO: The factoring of this phase could probably be improved. Consider
   // switching on the type of work before checking the flags. That's what
   // we do in all the other phases. I think this one is only different
   // because of the shared reconciliation logic below.
   const flags = finishedWork.flags;
-
   if (flags & ContentReset) {
     commitResetTextContent(finishedWork);
   }
 
   if (flags & Ref) {
+    console.log('当前节点有ref标记');
     const current = finishedWork.alternate;
     if (current !== null) {
       commitDetachRef(current);
@@ -2265,6 +2299,7 @@ function commitMutationEffectsOnFiber(
   }
 
   if (flags & Visibility) {
+    console.log('根据fiber.tag分情况处理节点', finishedWork.tag);
     switch (finishedWork.tag) {
       case SuspenseComponent: {
         const newState: OffscreenState | null = finishedWork.memoizedState;
@@ -2323,6 +2358,7 @@ function commitMutationEffectsOnFiber(
   const primaryFlags = flags & (Placement | Update | Hydrating);
   outer: switch (primaryFlags) {
     case Placement: {
+      console.log('执行插入操作');
       commitPlacement(finishedWork);
       // Clear the "placement" from effect tag so that we know that this is
       // inserted, before any life-cycles like componentDidMount gets called.
@@ -2333,6 +2369,7 @@ function commitMutationEffectsOnFiber(
     }
     case PlacementAndUpdate: {
       // Placement
+      console.log('执行插入并更新操作');
       commitPlacement(finishedWork);
       // Clear the "placement" from effect tag so that we know that this is
       // inserted, before any life-cycles like componentDidMount gets called.
@@ -2344,10 +2381,12 @@ function commitMutationEffectsOnFiber(
       break;
     }
     case Hydrating: {
+      console.log('执行Hydrating操作');
       finishedWork.flags &= ~Hydrating;
       break;
     }
     case HydratingAndUpdate: {
+      console.log('执行Hydrating并更新操作');
       finishedWork.flags &= ~Hydrating;
 
       // Update
@@ -2356,11 +2395,14 @@ function commitMutationEffectsOnFiber(
       break;
     }
     case Update: {
+      console.log('执行更新操作');
       const current = finishedWork.alternate;
       commitWork(current, finishedWork);
       break;
     }
   }
+
+  console.log('当前节点不存在符合条件的flags标记,不处理');
 }
 
 export function commitLayoutEffects(
@@ -2446,7 +2488,9 @@ function commitLayoutEffects_begin(
     if ((fiber.subtreeFlags & LayoutMask) !== NoFlags && firstChild !== null) {
       ensureCorrectReturnPointer(firstChild, fiber);
       nextEffect = firstChild;
+      console.log('当前节点的子节点存在layout节点相关的flags标记且子节点不为null,操作子节点继续执行commitLayoutEffects_begin', nextEffect);
     } else {
+      console.log('当前节点的子节点不存在layout节点相关的flags标记或子节点为null,执行commitLayoutMountEffects_complete', nextEffect);
       commitLayoutMountEffects_complete(subtreeRoot, root, committedLanes);
     }
   }
@@ -2460,6 +2504,7 @@ function commitLayoutMountEffects_complete(
   while (nextEffect !== null) {
     const fiber = nextEffect;
     if ((fiber.flags & LayoutMask) !== NoFlags) {
+      console.log('当前节点存在layout阶段的flags');
       const current = fiber.alternate;
       setCurrentDebugFiberInDEV(fiber);
       try {
@@ -2471,20 +2516,20 @@ function commitLayoutMountEffects_complete(
       }
       resetCurrentDebugFiberInDEV();
     }
-
     if (fiber === subtreeRoot) {
       nextEffect = null;
+      console.warn('当前节点为根节点,结束commitLayoutEffects');
       return;
     }
-
     const sibling = fiber.sibling;
     if (sibling !== null) {
       ensureCorrectReturnPointer(sibling, fiber.return);
       nextEffect = sibling;
+      console.log('当前节点有兄弟节点,操作兄弟节点执行commitLayoutEffects_begin', nextEffect);
       return;
     }
-
     nextEffect = fiber.return;
+    console.log('当前节点没有兄弟节点,返回父节点', nextEffect);
   }
 }
 
