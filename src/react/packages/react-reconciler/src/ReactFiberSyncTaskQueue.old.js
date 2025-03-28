@@ -66,6 +66,7 @@ export function flushSyncCallbacks() {
         console.log(callback, 'flushSyncCallbacks 同步刷新执行的任务');
         do {
           callback = callback(isSync);
+          console.log('执行任务,直到任务执行完毕');
         } while (callback !== null);
       }
       syncQueue = null;

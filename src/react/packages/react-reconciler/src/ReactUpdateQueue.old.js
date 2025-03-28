@@ -491,7 +491,6 @@ export function processUpdateQueue<State>(
       lastBaseUpdate.next = firstPendingUpdate;
     }
     lastBaseUpdate = lastPendingUpdate;
-    console.log('更新workInProgress的updateQueue', queue);
     // If there's a current queue, and it's different from the base queue, then
     // we need to transfer the updates to that queue, too. Because the base
     // queue is a singly-linked list with no cycles, we can append to both
@@ -509,7 +508,6 @@ export function processUpdateQueue<State>(
           currentLastBaseUpdate.next = firstPendingUpdate;
         }
         currentQueue.lastBaseUpdate = lastPendingUpdate;
-        console.log('更新current的updateQueue', currentQueue);
       }
     }
   }

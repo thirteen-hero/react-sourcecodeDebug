@@ -373,7 +373,7 @@ export function renderWithHooks<Props, SecondArg>(
   secondArg: SecondArg,
   nextRenderLanes: Lanes,
 ): any {
-  console.log('执行renderWithHooks,入参有:', '\ncurrent:', current, '\nworkInProgress:', workInProgress, '\nComponent:', Component, '\nprops:', props, '\nsecondArg:', secondArg);
+  console.log('执行renderWithHooks,入参有:', '\ncurrent:', current, '\nworkInProgress:', workInProgress, '\nComponent:', Component, '\nprops:', props, '\ncontext:', secondArg);
   renderLanes = nextRenderLanes;
   currentlyRenderingFiber = workInProgress;
   if (__DEV__) {

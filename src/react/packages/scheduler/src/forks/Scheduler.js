@@ -154,6 +154,7 @@ function flushWork(hasTimeRemaining, initialTime) {
   // We'll need a host callback the next time work is scheduled.
   isHostCallbackScheduled = false;
   if (isHostTimeoutScheduled) {
+    console.log('当前存在一个异步调度,取消这个异步调度');
     // We scheduled a timeout but it's no longer needed. Cancel it.
     isHostTimeoutScheduled = false;
     cancelHostTimeout();
@@ -212,7 +213,8 @@ function workLoop(hasTimeRemaining, initialTime) { //
     ) {
       // This currentTask hasn't expired, and we've reached the deadline.
       // 用过期时间和当前时间比较，没过期就跳出
-      console.log('当前任务有超过一帧渲染时间或者有更高优先级的任务,中断执行', currentTask);
+      console.log('当前任务不是同步任务且当前任务有超过一帧渲染时间或者有更高优先级的任务,中断执行', currentTask);
+      console.log('当前任务如果是同步任务,就不会走时间分片逻辑,直接将全部任务执行完毕');
       break;
     }
     const callback = currentTask.callback;
@@ -228,7 +230,7 @@ function workLoop(hasTimeRemaining, initialTime) { //
       currentTime = getCurrentTime();
       if (typeof continuationCallback === 'function') {
         // 这里表示任务没完成被中断了，则将返回的函数作为新的回调在下一次循环执行
-        console.log('当前任务被中断了,等待在下一次调度中继续执行', currentTask);
+        console.log('当前任务在上次调度中被中断了,在本次调度中继续执行', currentTask);
         currentTask.callback = continuationCallback;
         if (enableProfiling) {
           markTaskYield(currentTask, currentTime);// 标志当前任务被中断
@@ -241,27 +243,27 @@ function workLoop(hasTimeRemaining, initialTime) { //
         }
         if (currentTask === peek(taskQueue)) {
           pop(taskQueue);
-          console.log('当前任务在本轮被执行完,从taskQueue中出队');
+          console.log('当前任务被执行完,从taskQueue中出队');
         }
       }
       advanceTimers(currentTime);
     } else {
-      console.log('当前任务在上一轮已执行完,从taskQueue中出队');
+      console.log('当前任务在上次调度中已执行完,从taskQueue中出队');
       pop(taskQueue);//执行完的task会被删除，没执行完的不会被删除
     }
     currentTask = peek(taskQueue);
-    console.log('取出taskQueue中下一个任务,等待在下一轮执行', currentTask);
+    console.log('取出taskQueue中下一个任务,继续执行', currentTask);
   }
   // Return whether there's additional work
   if (currentTask !== null) {
     // 表示taskqueue没执行完，在performWorkUntilDeadline会继续发起调度
-    console.log('taskQueue没执行完,在performWorkUntilDeadline中发起下一次调度');
+    console.log('本次调度结束但taskQueue中的任务没执行完,发起下一次调度');
     return true;
   } else {
     // taskqueue执行完了，则会通过settimeout的方式调度执行timerqueue
     const firstTimer = peek(timerQueue);
     if (firstTimer !== null) {
-      console.log('taskQueue执行完了,通过setTimeout的方式调度执行timerQueue');
+      console.log('taskQueue执行完了,但timerQueue还没执行完,发起异步调度执行timerQueue');
       requestHostTimeout(handleTimeout, firstTimer.startTime - currentTime);
     }
     return false;
@@ -606,7 +608,7 @@ const performWorkUntilDeadline = () => { // 调度时候执行的函数
         // If there's more work, schedule the next message event at the end
         // of the preceding one.
         // 被中断了重新发起调度
-        console.log('上次调度中taskQueue中的任务还没执行完,发起了一次新的调度继续执行');
+        console.log('本次调度中taskQueue中的任务还没执行完,发起了一次新的调度继续执行');
         schedulePerformWorkUntilDeadline();
       } else {
         // hasMoreWork为false表示taskqueue执行完了

@@ -292,7 +292,7 @@ export function reconcileChildren(
 ) {
   console.log('开始进行dom diff');
   if (current === null) {
-    console.log('当前组件current为null,挂载组件');
+    console.log('当前节点current为null,开始reconcile构建当前节点的fiber结构,挂载组件');
     // If this is a fresh new component that hasn't been rendered yet, we
     // won't update its child set by applying minimal side-effects. Instead,
     // we will add them all to the child before it gets rendered. That means
@@ -303,6 +303,7 @@ export function reconcileChildren(
       nextChildren,
       renderLanes,
     );
+    console.log('当前节点构建好的fiber结构为:', workInProgress);
   } else {
     // If the current child is the same as the work in progress, it means that
     // we haven't yet started any work on these children. Therefore, we use
@@ -310,14 +311,14 @@ export function reconcileChildren(
 
     // If we had any progressed work already, that is invalid at this point so
     // let's throw it out.
-    console.log('当前组件current不为null,开始reconcile构建当前根节点的fiber结构');
+    console.log('当前节点current不为null,开始reconcile构建当前节点的fiber结构,更新组件');
     workInProgress.child = reconcileChildFibers(
       workInProgress,
       current.child,
       nextChildren,
       renderLanes,
     );
-    console.log('构建好的当前根节点的fiber结构为:', workInProgress);
+    console.log('当前节点更新好的fiber结构为:', workInProgress);
   }
 }
 
@@ -1464,7 +1465,7 @@ function updateHostRoot(current, workInProgress, renderLanes) {
     // already hydrated.
     resetHydrationState();
     if (nextChildren === prevChildren) {
-      console.log('前后两次的element没有发生变化,提前退出,直接复用之前的节点');
+      console.log('前后两次渲染的element相同,提前退出,直接复用之前的节点');
       return bailoutOnAlreadyFinishedWork(current, workInProgress, renderLanes);
     }
     console.log('前后两次渲染的element不同,调用reconcileChildren创建fiber');

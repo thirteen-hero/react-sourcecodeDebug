@@ -380,7 +380,7 @@ export function updateContainer(
   console.log('当前任务优先级:', lane);
   console.log('当前update数据结构:', update);
   enqueueUpdate(current, update, lane);
-  console.log('更新后的updateQueue结构如下:', current.updateQueue);
+  console.log('更新后的updateQueue数据结构:', current.updateQueue, '\ncurrent.updateQueue.shared.pending', current.updateQueue.shared.pending);
   console.warn('updateQueue更新后,开始执行调度更新');
   const root = scheduleUpdateOnFiber(current, lane, eventTime);
   if (root !== null) {

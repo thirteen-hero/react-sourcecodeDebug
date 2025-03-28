@@ -273,6 +273,7 @@ function ChildReconciler(shouldTrackSideEffects) {
       return;
     }
     const deletions = returnFiber.deletions;
+    console.log('把当前子节点添加至当前节点的deletions中,并给当前节点添加代表删除子节点的flags标记');
     if (deletions === null) {
       returnFiber.deletions = [childToDelete];
       returnFiber.flags |= ChildDeletion;
@@ -345,17 +346,21 @@ function ChildReconciler(shouldTrackSideEffects) {
     const current = newFiber.alternate;
     if (current !== null) {
       const oldIndex = current.index;
+      console.log('新节点复用了当前存在的子节点,复用的子节点原本的index为', oldIndex);
       if (oldIndex < lastPlacedIndex) {
         // This is a move.
         newFiber.flags |= Placement;
+        console.log('复用的子节点的index小于lastPlacedIndex,给新节点加上代表插入元素的flags插入');
         return lastPlacedIndex;
       } else {
         // This item can stay in place.
+        console.log('更新lastPlacedIndex为复用子节点的index');
         return oldIndex;
       }
     } else {
       // This is an insertion.
       newFiber.flags |= Placement;
+      console.log('新节点不存在alternate,说明新节点不是复用现有节点,给新节点添加代表插入节点的flags');
       return lastPlacedIndex;
     }
   }
@@ -783,7 +788,7 @@ function ChildReconciler(shouldTrackSideEffects) {
         knownKeys = warnOnInvalidKey(child, knownKeys, returnFiber);
       }
     }
-    console.log('当前需要处理的元素不是单个数据,而是一组数据');
+    console.log('当前需要渲染的元素不是单个元素,而是一组元素');
     let resultingFirstChild: Fiber | null = null;
     let previousNewFiber: Fiber | null = null;
 
@@ -791,11 +796,15 @@ function ChildReconciler(shouldTrackSideEffects) {
     let lastPlacedIndex = 0;
     let newIdx = 0;
     let nextOldFiber = null;
+    console.log('使用for循环以相同的顺序分别遍历当前子节点和即将渲染的元素数组,判断它们的key是否相同,如果找到第一个不能复用的节点,就跳出循环');
     for (; oldFiber !== null && newIdx < newChildren.length; newIdx++) {
+      // 对于react渲染整个数组的过程中,会在每个fiber节点上设置一个index,用来标记这个节点在children中的位置
       if (oldFiber.index > newIdx) {
+        console.log('当前现有子节点index大于即将渲染元素子节点的index,说明两个节点位置不匹配,将当前子节点赋值给nextOldFiber,当前子节点设置为null');
         nextOldFiber = oldFiber;
         oldFiber = null;
       } else {
+        console.log('当前现有子节点index和即将渲染元素子节点的index相同,将oldFiber.sibling赋值给nextOldFiber');
         nextOldFiber = oldFiber.sibling;
       }
       const newFiber = updateSlot(
@@ -805,17 +814,21 @@ function ChildReconciler(shouldTrackSideEffects) {
         lanes,
       );
       if (newFiber === null) {
+        console.log('当前子节点和即将渲染的元素子节点的key不同不能复用,直接中断循环');
         // TODO: This breaks on empty slots like null children. That's
         // unfortunate because it triggers the slow path all the time. We need
         // a better way to communicate whether this was a miss or null,
         // boolean, undefined, etc.
         if (oldFiber === null) {
           oldFiber = nextOldFiber;
+          console.log('当前子节点为null,把nextOldFiber赋值给当前子节点');
         }
         break;
       }
+      console.log('得到新的子节点', newFiber);
       if (shouldTrackSideEffects) {
         if (oldFiber && newFiber.alternate === null) {
+          console.log('存在现有子节点但新的子节点alternate为null,说明不是复用现有子节点,则删除之');
           // We matched the slot, but we didn't reuse the existing fiber, so we
           // need to delete the existing child.
           deleteChild(returnFiber, oldFiber);
@@ -843,10 +856,12 @@ function ChildReconciler(shouldTrackSideEffects) {
         const numberOfForks = newIdx;
         pushTreeFork(returnFiber, numberOfForks);
       }
+      console.log('即将渲染的元素数组已遍历结束,给剩余的当前节点的子节点加上代表删除的falgs,得到新节点结构:', resultingFirstChild);
       return resultingFirstChild;
     }
 
     if (oldFiber === null) {
+      console.log('当前存在的子节点已遍历结束,还有部分即将渲染的新节点未创建,接下来创建剩余的新节点');
       // If we don't have any more existing children we can choose a fast path
       // since the rest will all be insertions.
       for (; newIdx < newChildren.length; newIdx++) {
@@ -867,12 +882,14 @@ function ChildReconciler(shouldTrackSideEffects) {
         const numberOfForks = newIdx;
         pushTreeFork(returnFiber, numberOfForks);
       }
-      console.log('当前根节点没有子元素,需要新建fiber对象并维护其sibling关系', resultingFirstChild);
+      console.log('得到新节点结构:', resultingFirstChild);
       return resultingFirstChild;
     }
 
+    console.log('当前情况出现的原因是子节点间存在顺序的变化,导致当前还存在一些子节点,当前还有一些待渲染的子节点未被创建');
     // Add all children to a key map for quick lookups.
     const existingChildren = mapRemainingChildren(returnFiber, oldFiber);
+    console.log('对于剩余子节点创建一个以key为主键的map结构', existingChildren);
 
     // Keep scanning and use the map to restore deleted items as moves.
     for (; newIdx < newChildren.length; newIdx++) {
@@ -883,6 +900,7 @@ function ChildReconciler(shouldTrackSideEffects) {
         newChildren[newIdx],
         lanes,
       );
+      console.log('遍历剩余待创建的新节点,从map结构中查找key相同且element.type相同的节点进行复用,查找不到的创建新节点', newFiber);
       if (newFiber !== null) {
         if (shouldTrackSideEffects) {
           if (newFiber.alternate !== null) {
@@ -893,9 +911,11 @@ function ChildReconciler(shouldTrackSideEffects) {
             existingChildren.delete(
               newFiber.key === null ? newIdx : newFiber.key,
             );
+            console.log('当前创建的新节点是复用了老节点,将老节点从map结构中删除掉');
           }
         }
         lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx);
+
         if (previousNewFiber === null) {
           resultingFirstChild = newFiber;
         } else {
@@ -908,6 +928,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     if (shouldTrackSideEffects) {
       // Any existing children that weren't consumed above were deleted. We need
       // to add them to the deletion list.
+      console.log('将剩余的子节点加上代表删除的flags并放入父节点的deletions中');
       existingChildren.forEach(child => deleteChild(returnFiber, child));
     }
 
@@ -915,6 +936,7 @@ function ChildReconciler(shouldTrackSideEffects) {
       const numberOfForks = newIdx;
       pushTreeFork(returnFiber, numberOfForks);
     }
+    console.log('得到新节点结构:', resultingFirstChild);
     return resultingFirstChild;
   }
 
@@ -1182,7 +1204,7 @@ function ChildReconciler(shouldTrackSideEffects) {
               existing._debugSource = element._source;
               existing._debugOwner = element._owner;
             }
-            console.log('复用当前节点,将element.props.children赋值给当前节点,并将当前节点的return指向workInProgress,复用好的节点为:', existing);
+            console.log('复用当前子节点,将element.props.children赋值给当前子节点,并将当前子节点的return指向当前节点,复用好的节点为:', existing);
             return existing;
           }
         } else {
@@ -1202,7 +1224,7 @@ function ChildReconciler(shouldTrackSideEffects) {
               elementType.$$typeof === REACT_LAZY_TYPE &&
               resolveLazy(elementType) === child.type)
           ) {
-            console.log('当前子节点的节点类型和element的type相同,找到可复用的子节点,标记删除其用不到的子节点');
+            console.log('当前子节点的节点类型和element的type相同,找到可复用的子节点,标记删除其他用不到的子节点');
             // 已经找到可复用的fiber节点并且确认只有一个子节点 因此标记删除掉该child节点的所有sibling节点
             deleteRemainingChildren(returnFiber, child.sibling);
             // 复用child节点和element.props属性
@@ -1215,12 +1237,12 @@ function ChildReconciler(shouldTrackSideEffects) {
               existing._debugSource = element._source;
               existing._debugOwner = element._owner;
             }
-            console.log('复用当前节点,将element.props赋值给当前节点,处理ref,并将当前节点的return指向workInProgress,复用好的节点为:', existing);
+            console.log('复用当前子节点,将element.props赋值给当前子节点,处理ref,并将当前子节点的return指向当前节点,复用好的节点为:', existing);
             return existing;
           }
         }
         // Didn't match.
-        console.log('当前子节点和element的key相同但节点类型不同,无法复用,直接标记删除当前节点和其余子节点');
+        console.log('当前子节点和element的key相同但节点类型不同,无法复用,直接标记删除当前子节点和其余子节点');
         // key相同但节点类型不同 不能复用 直接标记删除该节点和其兄弟节点
         deleteRemainingChildren(returnFiber, child);
         break;
@@ -1251,7 +1273,7 @@ function ChildReconciler(shouldTrackSideEffects) {
       const created = createFiberFromElement(element, returnFiber.mode, lanes);
       created.ref = coerceRef(returnFiber, currentFirstChild, element);
       created.return = returnFiber;
-      console.log('根据当前要渲染的元素类型创建一个新的fiber,将element、mode、lanes赋值给当前节点,处理ref,并将当前节点的return指向workInProgress,新创建好的fiber为:', created);
+      console.log('根据当前要渲染的元素类型创建一个新的fiber,处理ref,并将当前子节点的return指向workInProgress,新创建好的fiber为:', created);
       return created;
     }
   }

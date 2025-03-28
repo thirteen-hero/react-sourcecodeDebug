@@ -574,7 +574,6 @@ export function markRootUpdated(
   eventTime: number,
 ) {
   root.pendingLanes |= updateLane;
-
   // If there are any suspended transitions, it's possible this new update
   // could unblock them. Clear the suspended lanes so that we can try rendering
   // them again.
