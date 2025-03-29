@@ -656,7 +656,6 @@ function bubbleProperties(completedWork: Fiber) {
 
   let newChildLanes = NoLanes;
   let subtreeFlags = NoFlags;
-  console.log('合并当前节点及其子节点、兄弟节点优先级');
   if (!didBailout) {
     // Bubble up the earliest expiration time.
     if (enableProfilerTimer && (completedWork.mode & ProfileMode) !== NoMode) {
@@ -765,7 +764,7 @@ function bubbleProperties(completedWork: Fiber) {
   }
 
   completedWork.childLanes = newChildLanes;
-
+  console.log('更新当前节点的childLanes和subtreeFlags', completedWork);
   return didBailout;
 }
 
