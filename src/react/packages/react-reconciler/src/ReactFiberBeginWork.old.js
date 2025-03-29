@@ -979,6 +979,7 @@ function markRef(current: Fiber | null, workInProgress: Fiber) {
   ) {
     // Schedule a Ref effect
     workInProgress.flags |= Ref;
+    console.log('给当前节点添加代表ref的flags');
     if (enableSuspenseLayoutEffectSemantics) {
       workInProgress.flags |= RefStatic;
     }
@@ -1526,7 +1527,7 @@ function updateHostComponent(
     // If we're switching from a direct text child to a normal child, or to
     // empty, we need to schedule the text content to be reset.
     // 设置ContentReset 标识文本节点重置
-    console.log('当前节点是一个更新节点,它之前是文本节点,但现在不是文本节点,重置ContentReset标识');
+    console.log('当前节点是一个更新节点,它之前是文本节点,但现在不是文本节点,给当前节点添加代表重置文本节点的flags');
     workInProgress.flags |= ContentReset;
   }
 

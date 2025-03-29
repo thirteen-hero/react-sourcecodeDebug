@@ -2012,20 +2012,20 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
     if (siblingFiber !== null) {
       // If there is more work to do in this returnFiber, do that next.
       workInProgress = siblingFiber;
-      console.log('当前节点有兄弟节点,接下来开始处理兄弟节点', siblingFiber);
+      console.log('当前节点有兄弟节点,接下来开始操作兄弟节点进行beginwork', siblingFiber);
       return;
     }
     // Otherwise, return to the parent
     completedWork = returnFiber;
     // Update the next thing we're working on in case something throws.
     workInProgress = completedWork;
-    console.warn('当前节点没有兄弟节点,返回父节点,completeWork结束', completedWork);
+    console.warn('当前节点没有兄弟节点,completeWork结束,接下来操作父节点进行completeUnitOfWork', completedWork);
   } while (completedWork !== null);
 
   // We've reached the root.
   if (workInProgressRootExitStatus === RootInProgress) {
     workInProgressRootExitStatus = RootCompleted;
-    console.log('当前completeWork已抵达根节点');
+    console.log('当前已抵达根节点,completeUnitOfWork结束');
   }
 }
 //提交阶段

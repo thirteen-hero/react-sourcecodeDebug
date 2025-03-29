@@ -385,11 +385,13 @@ function ChildReconciler(shouldTrackSideEffects) {
       // Insert
       const created = createFiberFromText(textContent, returnFiber.mode, lanes);
       created.return = returnFiber;
+      console.log('当前存在的子节点current为null,或当前存在的子节点current不为文本节点,节点无法复用,创建一个新的文本节点');
       return created;
     } else {
       // Update
       const existing = useFiber(current, textContent);
       existing.return = returnFiber;
+      console.log('当前存在的子节点是文本节点,复用此节点',existing);
       return existing;
     }
   }
@@ -401,7 +403,9 @@ function ChildReconciler(shouldTrackSideEffects) {
     lanes: Lanes,
   ): Fiber {
     const elementType = element.type;
+    console.log('当前需要渲染的子节点的type为:', elementType);
     if (elementType === REACT_FRAGMENT_TYPE) {
+      console.log('当前需要渲染的子节点的type为react.fragment');
       return updateFragment(
         returnFiber,
         current,
@@ -435,6 +439,7 @@ function ChildReconciler(shouldTrackSideEffects) {
           existing._debugSource = element._source;
           existing._debugOwner = element._owner;
         }
+        console.log('当前存在子节点current不为null且type和即将渲染的元素type相同,复用当前存在子节点', existing);
         return existing;
       }
     }
@@ -442,6 +447,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     const created = createFiberFromElement(element, returnFiber.mode, lanes);
     created.ref = coerceRef(returnFiber, current, element);
     created.return = returnFiber;
+    console.log('当前存在子节点不能复用,创建新的节点', created);
     return created;
   }
 
@@ -485,11 +491,13 @@ function ChildReconciler(shouldTrackSideEffects) {
         key,
       );
       created.return = returnFiber;
+      console.log('当前存在的子节点current为null或current.tag不为fragment,创建一个新的fragment类型的fiber', created);
       return created;
     } else {
       // Update
       const existing = useFiber(current, fragment);
       existing.return = returnFiber;
+      console.log('当前存在的子节点为fragment,复用当前节点', existing);
       return existing;
     }
   }
@@ -525,7 +533,6 @@ function ChildReconciler(shouldTrackSideEffects) {
           );
           created.ref = coerceRef(returnFiber, null, newChild);
           created.return = returnFiber;
-          console.log('当前构建的组件类型是react.element,创建一个新的fiber并绑定ref和重置return指向');
           return created;
         }
         case REACT_PORTAL_TYPE: {
@@ -586,7 +593,9 @@ function ChildReconciler(shouldTrackSideEffects) {
       // Text nodes don't have keys. If the previous node is implicitly keyed
       // we can continue to replace it without aborting even if it is not a text
       // node.
+      console.log('当前需要渲染的子节点是文本节点');
       if (key !== null) {
+        console.log('当前存在的子节点的key不为null,无法复用,因为文本节点本身没有key');
         return null;
       }
       return updateTextNode(returnFiber, oldFiber, '' + newChild, lanes);
@@ -596,15 +605,19 @@ function ChildReconciler(shouldTrackSideEffects) {
       switch (newChild.$$typeof) {
         case REACT_ELEMENT_TYPE: {
           if (newChild.key === key) {
+            console.log('当前存在子节点和即将渲染子节点的key相同,进一步处理判定是否可以复用');
             return updateElement(returnFiber, oldFiber, newChild, lanes);
           } else {
+            console.log('当前存在子节点和即将渲染子节点的key不同,不能复用');
             return null;
           }
         }
         case REACT_PORTAL_TYPE: {
           if (newChild.key === key) {
+            console.log('当前存在子节点和即将渲染子节点的key相同,进一步处理判定是否可以复用');
             return updatePortal(returnFiber, oldFiber, newChild, lanes);
           } else {
+            console.log('当前存在子节点和即将渲染子节点的key不同,不能复用');
             return null;
           }
         }
@@ -618,10 +631,12 @@ function ChildReconciler(shouldTrackSideEffects) {
       }
 
       if (isArray(newChild) || getIteratorFn(newChild)) {
+        console.log('当前是数组或其他迭代类型');
         if (key !== null) {
+          console.log('这几种类型本身是没有key的,若有key,则无法复用');
           return null;
         }
-
+        console.log('这几种类型的数据需要更新为fragment类型');
         return updateFragment(returnFiber, oldFiber, newChild, lanes, null);
       }
 
@@ -814,21 +829,20 @@ function ChildReconciler(shouldTrackSideEffects) {
         lanes,
       );
       if (newFiber === null) {
-        console.log('当前子节点和即将渲染的元素子节点的key不同不能复用,直接中断循环');
+        console.log('当前存在的子节点和即将渲染的元素子节点的key不同不能复用,直接中断循环');
         // TODO: This breaks on empty slots like null children. That's
         // unfortunate because it triggers the slow path all the time. We need
         // a better way to communicate whether this was a miss or null,
         // boolean, undefined, etc.
         if (oldFiber === null) {
           oldFiber = nextOldFiber;
-          console.log('当前子节点为null,把nextOldFiber赋值给当前子节点');
         }
         break;
       }
       console.log('得到新的子节点', newFiber);
       if (shouldTrackSideEffects) {
         if (oldFiber && newFiber.alternate === null) {
-          console.log('存在现有子节点但新的子节点alternate为null,说明不是复用现有子节点,则删除之');
+          console.log('新创建的子节点不是基于现存子节点的alternate创建的,说明不是复用现存子节点,则销毁现存子节点');
           // We matched the slot, but we didn't reuse the existing fiber, so we
           // need to delete the existing child.
           deleteChild(returnFiber, oldFiber);
@@ -856,7 +870,7 @@ function ChildReconciler(shouldTrackSideEffects) {
         const numberOfForks = newIdx;
         pushTreeFork(returnFiber, numberOfForks);
       }
-      console.log('即将渲染的元素数组已遍历结束,给剩余的当前节点的子节点加上代表删除的falgs,得到新节点结构:', resultingFirstChild);
+      console.log('即将渲染的元素数组已遍历结束,当前存在的子节点链表还没遍历结束,给剩余的当前节点的子节点加上代表删除的falgs,返回新链表的头节点指针:', resultingFirstChild);
       return resultingFirstChild;
     }
 
@@ -882,7 +896,7 @@ function ChildReconciler(shouldTrackSideEffects) {
         const numberOfForks = newIdx;
         pushTreeFork(returnFiber, numberOfForks);
       }
-      console.log('得到新节点结构:', resultingFirstChild);
+      console.log('返回新链表的头节点指针:', resultingFirstChild);
       return resultingFirstChild;
     }
 
@@ -936,7 +950,7 @@ function ChildReconciler(shouldTrackSideEffects) {
       const numberOfForks = newIdx;
       pushTreeFork(returnFiber, numberOfForks);
     }
-    console.log('得到新节点结构:', resultingFirstChild);
+    console.log('返回新链表的头节点指针:', resultingFirstChild);
     return resultingFirstChild;
   }
 
@@ -1151,25 +1165,26 @@ function ChildReconciler(shouldTrackSideEffects) {
     console.log('reconcileSingleTextNode,当前节点为文本节点');
     // There's no need to check for keys on text nodes since we don't have a
     // way to define them.
-    //当前节点不为null且当前节点tag为hostText 不再判断文本节点的key 因为文本节点本来就没有key
+    console.log('当前节点不为null且当前节点tag为hostText,不再判断文本节点的key,因为文本节点本来就没有key');
     if (currentFirstChild !== null && currentFirstChild.tag === HostText) {
       // We already have an existing node so let's just update it and delete
       // the rest.
-      // 当前节点为文本节点 直接删除后续的兄弟节点
+      console.log('当前节点为文本节点,直接删除后续的兄弟节点,因为文本节点本来就没有兄弟节点');
       deleteRemainingChildren(returnFiber, currentFirstChild.sibling);
-      // 复用当前文本节点的fiber节点 重新赋值新的文本
       const existing = useFiber(currentFirstChild, textContent);
       // 更新新节点的父节点
       existing.return = returnFiber;
+      console.log('复用当前文本节点的fiber节点,重新赋值新的文本', existing);
       return existing;
     }
     // The existing first child is not a text node so we need to create one
     // and delete the existing ones.
-    // 不存在子节点 或者第一个子节点不是文本节点 将所有节点都删除 重新创建新的文本fiber节点
+    console.log('不存在子节点,或者第一个子节点不是文本节点,将所有节点都删除,重新创建新的文本fiber节点');
     deleteRemainingChildren(returnFiber, currentFirstChild);
     const created = createFiberFromText(textContent, returnFiber.mode, lanes);
     // 重置新fiber节点的父节点
     created.return = returnFiber;
+    console.log('新的文本节点是:', created);
     return created;
   }
   function reconcileSingleElement(
