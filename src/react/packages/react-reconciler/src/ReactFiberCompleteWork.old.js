@@ -1004,7 +1004,7 @@ function completeWork(
           appendAllChildren(instance, workInProgress, false, false);
 
           workInProgress.stateNode = instance;
-          console.log('当前节点current为null,创建一个新的current并建立兄弟父子关系和workInProgress关系,创建好的current:', instance);
+          console.log('当前节点current为null,创建一个新的current并建立兄弟父子关系和workInProgress关系,创建好的current(即stateNode):', instance);
           // Certain renderers require commit-time effects for initial mount.
           // (eg DOM renderer supports auto-focus for certain elements).
           // Make sure such renderers get scheduled for later work.

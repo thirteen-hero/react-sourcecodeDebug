@@ -12,9 +12,9 @@ export type HookFlags = number;
 export const NoFlags = /*   */ 0b0000;
 
 // Represents whether effect should fire.
-export const HasEffect = /* */ 0b0001;
+export const HasEffect = /* */ 0b0001; // effect通用类型
 
 // Represents the phase in which the effect (not the clean-up) fires.
-export const Insertion = /*  */ 0b0010;
-export const Layout = /*    */ 0b0100;
-export const Passive = /*   */ 0b1000;
+export const Insertion = /*  */ 0b0010; // 对应useInsertionEffect
+export const Layout = /*    */ 0b0100; // 对应useLayoutEffect
+export const Passive = /*   */ 0b1000; // 对应useEffect

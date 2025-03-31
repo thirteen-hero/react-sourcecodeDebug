@@ -432,7 +432,6 @@ export function commitMount(
   // does to implement the `autoFocus` attribute on the client). But
   // there are also other cases when this might happen (such as patching
   // up text content during hydration mismatch). So we'll check this again.
-  console.log('执行commitMount');
   switch (type) {
     case 'button':
     case 'input':
@@ -510,7 +509,7 @@ export function appendChildToContainer(
   // defined.
   // https://github.com/facebook/react/issues/11918
   const reactRootContainer = container._reactRootContainer;
-  console.log('将当前节点插入根节点并给根节点添加_reactRootContainer标识', container);
+  console.log('将当前节点对应的stateNode插入根节点对应的stateNode,并给根节点添加_reactRootContainer标识', container);
   if (
     (reactRootContainer === null || reactRootContainer === undefined) &&
     parentNode.onclick === null

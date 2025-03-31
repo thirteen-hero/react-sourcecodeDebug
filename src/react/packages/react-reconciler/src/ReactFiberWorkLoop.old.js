@@ -2061,7 +2061,7 @@ function commitRootImpl(
     // TODO: Might be better if `flushPassiveEffects` did not automatically
     // flush synchronous work at the end, to avoid factoring hazards like this.
     // 这个函数很重要 清除effect
-    console.log('调用flushPassiveEffects执行完所有effect的任务');
+    console.log('因为调度优先级的原因,还得保证本次commit阶段调度的useEffect必须得在下一次commit之前执行,所以才会在每一次commit之前先执行一次flushPassiveEffects,清理掉可能存在的上一次的useEffect。');
     flushPassiveEffects();
   } while (rootWithPendingPassiveEffects !== null);
   flushRenderPhaseStrictModeWarningsInDEV();
@@ -2105,7 +2105,6 @@ function commitRootImpl(
       }
     }
   }
-  // 重置fiberRoot
   root.finishedWork = null;
   root.finishedLanes = NoLanes;
 
@@ -2125,6 +2124,7 @@ function commitRootImpl(
   // pending time is whatever is left on the root fiber.
   let remainingLanes = mergeLanes(finishedWork.lanes, finishedWork.childLanes);
   markRootFinished(root, remainingLanes);
+  console.log('重置fiberRootNode', root);
 
   // 重置全局变量
   if (root === workInProgressRoot) {
@@ -2152,8 +2152,7 @@ function commitRootImpl(
     if (!rootDoesHavePassiveEffects) {
       rootDoesHavePassiveEffects = true;
       pendingPassiveEffectsRemainingLanes = remainingLanes;
-      console.log('完成diff算法后的虚拟dom:', finishedWork);
-      console.log('当前渲染触发了被动渲染也就是flags为PassiveMask,也就是带有副作用effect的fiber,新开调度异步执行');
+      console.log('当前节点的flags或subtreeFlags为PassiveMask,也就是当前节点是带有副作用的fiber,新开调度异步执行');
       scheduleCallback(NormalSchedulerPriority, () => {
         // 调度执行
         flushPassiveEffects();
@@ -2164,26 +2163,29 @@ function commitRootImpl(
       });
     }
   }
-
   // Check if there are any effects in the whole tree.
   // TODO: This is left over from the effect list implementation, where we had
   // to check for the existence of `firstEffect` to satisfy Flow. I think the
   // only other reason this optimization exists is because it affects profiling.
   // Reconsider whether this is necessary.
-  // 检查fiber树上是否存在任何effect，就是useeffect和layoutEffect
+  // 检查HostFiber的子孙元素是否存在副作用
   const subtreeHasEffects =
     (finishedWork.subtreeFlags &
       (BeforeMutationMask | MutationMask | LayoutMask | PassiveMask)) !==
     NoFlags;
+  // 检查HostFiber本身是否存在副作用
   const rootHasEffect =
     (finishedWork.flags &
       (BeforeMutationMask | MutationMask | LayoutMask | PassiveMask)) !==
     NoFlags;
-
+  // 任何一个存在副作用 说明需要更新 进入commit逻辑
   if (subtreeHasEffects || rootHasEffect) {
     const prevTransition = ReactCurrentBatchConfig.transition;
     ReactCurrentBatchConfig.transition = null;
+    // 获取当前优先级
     const previousPriority = getCurrentUpdatePriority();
+    // 设置同步优先级 commit必须同步执行
+    console.log('当前节点或者子孙节点存在副作用,将当前任务设置为同步优先级,代表commit阶段的任务是立即执行的同步任务,并且是不可中断的。')
     setCurrentUpdatePriority(DiscreteEventPriority);
 
     const prevExecutionContext = executionContext;
@@ -2200,6 +2202,7 @@ function commitRootImpl(
     // state of the host tree right before we mutate it. This is where
     // getSnapshotBeforeUpdate is called.
     console.warn('commitBeforeMutationEffects,更新class组件实例上的state、props等,以及执行getSnapShotBeforeUpdate生命周期函数。');
+    console.log('当前开始commitBeforeMutationEffects的节点:', finishedWork);
     // commit的第一个阶段，这里主要处理class组件和hostRoot组件，因为只有他们两个组件才会带Snapshot的flags
     // 对于class组件会调用getSnapshotBeforeUpdate生命周期， hostRoot对清空容器内容，也就是#root里面的内容
     const shouldFireAfterActiveInstanceBlur = commitBeforeMutationEffects(
@@ -2223,6 +2226,7 @@ function commitRootImpl(
     // commit第二个阶段dom突变，这个阶段主要处理一些flags为ref，contextReset，ref，placement， update，deletion，hydrating的fiber
     // 最终都会体现到对dom的增删和插入移位上
     console.warn('commitMutationEffects,完成副作用的执行,主要包括重置文本节点以及真实dom节点的插入、删除和更新等操作。此时切换curren树,新的工作树已建立完毕,老的树作为下一次的缓冲树使用(双缓冲结构)');
+    console.log('当前开始commitMutationEffects的节点:', finishedWork);
     commitMutationEffects(root, finishedWork, lanes);
     
     if (enableCreateEventHandleAPI) {
@@ -2230,6 +2234,8 @@ function commitRootImpl(
         afterActiveInstanceBlur();
       }
     }
+
+    // 渲染后 重置container容器信息
     resetAfterCommit(root.containerInfo);
 
     // The work-in-progress tree is now the current tree. This must come after
@@ -2253,6 +2259,7 @@ function commitRootImpl(
     }
     // 这里执行layouteffect副作用
     console.warn('commitLayoutEffects,执行类组件的componentDidMount和componentDidUpdate生命周期函数,执行函数组件useLayoutEffect的副作用函数,对finishedQueue上的effects回调进行处理');
+    console.log('当前开始commitLayoutEffects的节点:', finishedWork);
     commitLayoutEffects(finishedWork, root, lanes);
     if (__DEV__) {
       if (enableDebugTracing) {
@@ -2279,6 +2286,7 @@ function commitRootImpl(
     ReactCurrentBatchConfig.transition = prevTransition;
   } else {
     // No effects.
+    // 本次更新没有副作用 直接覆盖
     root.current = finishedWork;
     // Measure these anyway so the flamegraph explicitly shows that there were
     // no effects.

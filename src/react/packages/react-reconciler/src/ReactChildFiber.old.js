@@ -370,6 +370,9 @@ function ChildReconciler(shouldTrackSideEffects) {
     // This is simpler for the single child case. We only need to do a
     // placement for inserting new children.
     if (shouldTrackSideEffects && newFiber.alternate === null) {
+      console.log('在react应用首次加载时,只有根节点进入了update阶段,因为根节点的current是一直存在的,其他节点在应用首次加载时进入的都是mount阶段');
+      console.log('所以,根节点在创建它的child,也就是APP根组件所对应的节点时,被打上了Placement插入标记,这就对应了首次加载时,在commit阶段,只会执行一次Placement插入操作');
+      console.log('mount阶段只有app根组件对应的fiber节点存在插入标记,这样的好处是:在react应用的首次加载时【首屏渲染】,无需执行大量的插入操作,只需要执行一次插入操作,即可将已经构建完成的离屏dom树加载到首页');
       newFiber.flags |= Placement;
     }
     return newFiber;
