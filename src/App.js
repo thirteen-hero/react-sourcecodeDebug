@@ -58,7 +58,7 @@ const App = () => {
 
   return (
     <>
-      <div onClick = {handleClick}>
+      <div onClick = {handleClick} onClickCapture={() => console.log(111)}>
         <p>{`num: ${num}`}</p>
         <p>{`number: ${number}`}</p>
         <InApp />

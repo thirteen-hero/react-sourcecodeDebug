@@ -227,7 +227,7 @@ function executeDispatch(
 ): void {
   const type = event.type || 'unknown-event';
   event.currentTarget = currentTarget;
-  console.log('事件的执行最终会调用invokeGuardedCallbackAndCatchFirstError，把事件函数的执行上下文置为undefined，这就是为什么在react事件中this为undefined，invoke主要就是包含错误抛出以及把syntheticBaseEvent合成事件对象传入')
+  console.log('事件的执行最终会调用invokeGuardedCallbackAndCatchFirstError,把事件函数的执行上下文置为undefined,这就是为什么在react事件中this为undefined,invoke主要就是包含错误抛出以及把syntheticBaseEvent合成事件对象传入');
   invokeGuardedCallbackAndCatchFirstError(type, listener, undefined, event);
   event.currentTarget = null;
 }
@@ -265,7 +265,8 @@ export function processDispatchQueue(
 ): void {
   const inCapturePhase = (eventSystemFlags & IS_CAPTURE_PHASE) !== 0;
   if(dispatchQueue.length) {
-    console.log(dispatchQueue, 'log: processDispatchQueue 触发当前节点递归到根节点路径上同名的事件')
+    console.warn('第五步:循环执行收集到的真正的事件函数');
+    console.log('捕获阶段的事件回调倒序执行,冒泡阶段的事件回调顺序执行,设置了isPropagationStopped,捕获和和冒泡阶段的事件都不执行');
   }
   for (let i = 0; i < dispatchQueue.length; i++) {
     const {event, listeners} = dispatchQueue[i];
@@ -294,6 +295,7 @@ function dispatchEventsForPlugins(
     eventSystemFlags,
     targetContainer,
   );
+  console
   processDispatchQueue(dispatchQueue, eventSystemFlags);
 }
 
@@ -675,7 +677,6 @@ export function dispatchEventForPluginEventSystem(
       }
     }
   }
-
   batchedUpdates(() =>
     dispatchEventsForPlugins(
       domEventName,
@@ -713,7 +714,6 @@ export function accumulateSinglePhaseListeners(
 
   let instance = targetFiber;
   let lastHostComponent = null;
-
   // Accumulate all instances and listeners via the target -> root path.
   // 从事件触发点到root收集事件
   while (instance !== null) {
@@ -721,7 +721,6 @@ export function accumulateSinglePhaseListeners(
     // Handle listeners that are on HostComponents (i.e. <div>)
     if (tag === HostComponent && stateNode !== null) {
       lastHostComponent = stateNode;
-
       // createEventHandle listeners
       if (enableCreateEventHandleAPI) {
         const eventHandlerListeners = getEventHandlerListeners(
@@ -744,7 +743,6 @@ export function accumulateSinglePhaseListeners(
           });
         }
       }
-
       // Standard React on* listeners, i.e. onClick or onClickCapture
       if (reactEventName !== null) {
         const listener = getListener(instance, reactEventName);

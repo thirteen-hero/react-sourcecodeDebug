@@ -171,7 +171,7 @@ export function createRoot(
   container: Element | DocumentFragment,
   options?: CreateRootOptions,
 ): RootType {
-  console.log('createRoot会先校验传入的container是否为一个有效的DOM节点,如果是开发环境还会做一些其他校验如是否为body等')
+  console.log('createRoot会先校验传入的container是否为一个有效的DOM节点,如果是开发环境还会做一些其他校验如是否为body等');
   // 校验container是否有效
   if (!isValidContainer(container)) {
     throw new Error('createRoot(...): Target container is not a DOM element.');

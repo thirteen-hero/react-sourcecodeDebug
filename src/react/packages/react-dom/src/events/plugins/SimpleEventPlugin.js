@@ -204,6 +204,8 @@ function extractEvents(
       nativeEvent,
     );
     if (listeners.length > 0) {
+      console.warn('第二步:事件收集');
+      console.log('从当前触发事件节点向上递归直到根节点,从fiber节点对应的stateNode上面收集和事件名称对应的真正的回调函数,并push到listeners数组内', listeners);
       // Intentionally create event lazily.
       const event = new SyntheticEventCtor(
         reactName,
@@ -212,7 +214,9 @@ function extractEvents(
         nativeEvent,
         nativeEventTarget,
       );
-      dispatchQueue.push({event, listeners});
+      console.warn('第三步:创建合成事件对象', event);
+      dispatchQueue.push({event, listeners}); 
+      console.warn('第四步:更新dispatchQueue', dispatchQueue);
     }
   }
 }
