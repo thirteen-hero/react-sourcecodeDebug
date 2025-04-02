@@ -892,7 +892,7 @@ function updateReducer<S, I, A>(
     // newState和之前的state不同,标记该节点需要更新
     if (!is(newState, hook.memoizedState)) {
       markWorkInProgressReceivedUpdate();
-      console.log('新计算出的state值和上次渲染中的state值不同,标记更新');
+      console.log('新计算出的state值和上次渲染中的state值不同,标记更新', hook);
     }
 
     hook.memoizedState = newState; // 整个update链表执行完得到的state用于本次render
@@ -1520,7 +1520,7 @@ function forceStoreRerender(fiber) {
 function mountState<S>(
   initialState: (() => S) | S,
 ): [S, Dispatch<BasicStateAction<S>>] {
-  console.log('函数组件初次调用useState');
+  console.log('函数组件mount阶段调用useState');
   const hook = mountWorkInProgressHook();
   if (typeof initialState === 'function') {
     // $FlowFixMe: Flow doesn't like mixed types
@@ -1537,7 +1537,7 @@ function mountState<S>(
     lastRenderedState: (initialState: any), // 上次render后的state
   };
   hook.queue = queue;
-  console.log('创建state的更新对象并挂载到hook.queue上');
+  console.log('创建state的更新对象并挂载到hook.queue上', hook);
   const dispatch: Dispatch<
     BasicStateAction<S>,
   > = (queue.dispatch = (dispatchSetState.bind(
@@ -1552,7 +1552,7 @@ function mountState<S>(
 function updateState<S>(
   initialState: (() => S) | S,
 ): [S, Dispatch<BasicStateAction<S>>] {
-  console.log('函数组件更新阶段在beginwork过程中调用本函数处理setState更新');
+  console.log('函数组件update阶段调用useState');
   return updateReducer(basicStateReducer, (initialState: any));
 }
 
@@ -1563,7 +1563,6 @@ function rerenderState<S>(
 }
 
 function pushEffect(tag, create, destroy, deps) {
-  console.log('执行pushEffect');
   const effect: Effect = {
     tag,
     create,
@@ -1590,7 +1589,6 @@ function pushEffect(tag, create, destroy, deps) {
     }
     console.log('componentUpdateQueue不为null,更新lastEffect、effect、firstEffect的链式关系,并挂载到componentUpdateQueue的lastEffect上,componentUpdateQueue:', componentUpdateQueue);
   }
-  console.log('componentUpdateQueue即当前fiber的updateQueue');
   return effect;
 }
 
@@ -1689,9 +1687,7 @@ function updateRef<T>(initialValue: T): {|current: T|} {
 }
 
 function mountEffectImpl(fiberFlags, hookFlags, create, deps): void {
-  console.log('mountEffect,函数组件挂载初次执行effect');
   const hook = mountWorkInProgressHook();
-  console.log('将当前hook信息挂载到workInProgressHook链表上');
   const nextDeps = deps === undefined ? null : deps;
   //给当前fiber打上一个flags
   currentlyRenderingFiber.flags |= fiberFlags;
@@ -1701,7 +1697,7 @@ function mountEffectImpl(fiberFlags, hookFlags, create, deps): void {
     undefined,
     nextDeps,
   );
-  console.log('将维护好的effect环挂载在hook.memoizedState上,hook:', hook);
+  console.log('先在fiber上打上对应副作用flags,然后推入一个包含HookHasEffect标记的effect,说明这个effect包含副作用需要被执行', hook);
 }
 
 function updateEffectImpl(fiberFlags, hookFlags, create, deps): void {
@@ -1716,6 +1712,7 @@ function updateEffectImpl(fiberFlags, hookFlags, create, deps): void {
       const prevDeps = prevEffect.deps;
       if (areHookInputsEqual(nextDeps, prevDeps)) {
         hook.memoizedState = pushEffect(hookFlags, create, destroy, nextDeps);
+        console.log('nextDeps存在且nextDeps和prevDeps相同或nextDeps为空,则本次不执行这个hook,推入一个没有HookHasEffect标记的effect', hook);
         return;
       }
     }
@@ -1729,12 +1726,14 @@ function updateEffectImpl(fiberFlags, hookFlags, create, deps): void {
     destroy,
     nextDeps,
   );
+  console.log('nextDeps不存在或nextDeps和prevDeps不同,先在fiber上打上对应副作用flags,然后推入一个包含hookHasEffect标记的effect,说明这个副作用在commit阶段会被执行', hook);
 }
 // 初次渲染时候的effect
 function mountEffect(
   create: () => (() => void) | void,
   deps: Array<mixed> | void | null,
 ): void {
+  console.log('函数组件mount阶段执行useEffect');
   if (
     __DEV__ &&
     enableStrictEffects &&
@@ -1760,6 +1759,7 @@ function updateEffect(
   create: () => (() => void) | void,
   deps: Array<mixed> | void | null,
 ): void {
+  console.log('函数组件update阶段执行useEffect');
   return updateEffectImpl(PassiveEffect, HookPassive, create, deps);
 }
 
@@ -1767,6 +1767,7 @@ function mountInsertionEffect(
   create: () => (() => void) | void,
   deps: Array<mixed> | void | null,
 ): void {
+  console.log('函数组件mount阶段执行useInsertionEffect');
   return mountEffectImpl(UpdateEffect, HookInsertion, create, deps);
 }
 
@@ -1774,6 +1775,7 @@ function updateInsertionEffect(
   create: () => (() => void) | void,
   deps: Array<mixed> | void | null,
 ): void {
+  console.log('函数组件update阶段执行updateInsertionEffect');
   return updateEffectImpl(UpdateEffect, HookInsertion, create, deps);
 }
 
@@ -1781,6 +1783,7 @@ function mountLayoutEffect(
   create: () => (() => void) | void,
   deps: Array<mixed> | void | null,
 ): void {
+  console.log('函数组件mount阶段执行useLayoutEffect');
   let fiberFlags: Flags = UpdateEffect;
   if (enableSuspenseLayoutEffectSemantics) {
     fiberFlags |= LayoutStaticEffect;
@@ -1799,6 +1802,7 @@ function updateLayoutEffect(
   create: () => (() => void) | void,
   deps: Array<mixed> | void | null,
 ): void {
+  console.log('函数组件update阶段执行useLayoutEffect');
   return updateEffectImpl(UpdateEffect, HookLayout, create, deps);
 }
 
@@ -2242,7 +2246,7 @@ function dispatchSetState<S, A>(
       );
     }
   }
-  console.warn('触发函数组件的dispatch更新函数');
+  console.log('触发函数组件的dispatch更新函数');
   const lane = requestUpdateLane(fiber);
 
   // 将action封装成一个update节点,用于后续构建链表使用
@@ -2294,7 +2298,7 @@ function dispatchSetState<S, A>(
             // It's still possible that we'll need to rebase this update later,
             // if the component re-renders for a different reason and by that
             // time the reducer has changed.
-            console.warn('新计算出来的数据和上次render时的数据相同,退出,不再调度更新');
+            console.log('新计算出来的数据和上次render时的数据相同,退出,不再调度更新');
             return;
           }
         } catch (error) {
@@ -2307,7 +2311,7 @@ function dispatchSetState<S, A>(
       }
     }
     const eventTime = requestEventTime();
-    console.warn('当前节点有需要更新的任务,新开调度,发起更新', fiber);
+    console.log('当前节点有需要更新的任务,新开调度,发起更新', fiber);
     const root = scheduleUpdateOnFiber(fiber, lane, eventTime);
     if (root !== null) {
       entangleTransitionUpdate(root, queue, lane);
