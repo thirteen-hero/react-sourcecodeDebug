@@ -1,29 +1,60 @@
 import React, { useState, useEffect, useInsertionEffect, useLayoutEffect } from 'react';
 import './App.css';
-
-const InApp = () => {
+const Inner = ({ num }) => {
   useEffect(() => {
-    console.log('InApp useEffect', 'create');
+    console.log('Inner useEffect', 'create', 1111);
     return () => {
-      console.log('InApp useEffect', 'destroy');
+      console.log('Inner useEffect', 'destroy', 1111);
     }
-  }, []);
+  }, [num]);
 
   useInsertionEffect(() => {
-    console.log('InApp useInsertionEffect', 'create');
+    console.log('Inner useInsertionEffect', 'create', 1111);
     return () => {
-      console.log('InApp useInsertionEffect', 'destroy');
+      console.log('Inner useInsertionEffect', 'destroy', 1111);
     }
-  }, []);
+  }, [num]);
 
   useLayoutEffect(() => {
-    console.log('InApp useLayoutEffect', 'create');
+    console.log('Inner useLayoutEffect', 'create', 1111);
     return () => {
-      console.log('InApp useLayoutEffect', 'destroy');
+      console.log('Inner useLayoutEffect', 'destroy', 1111);
     }
-  }, []);
+  }, [num]);
 
-  return <div>inApp</div>
+  console.log(num, 'num');
+
+  return (<div>inner</div>)
+}
+
+const InApp = ({ num }) => {
+  useEffect(() => {
+    console.log('InApp useEffect', 'create', 1111);
+    return () => {
+      console.log('InApp useEffect', 'destroy', 1111);
+    }
+  }, [num]);
+
+  useInsertionEffect(() => {
+    console.log('InApp useInsertionEffect', 'create', 1111);
+    return () => {
+      console.log('InApp useInsertionEffect', 'destroy', 1111);
+    }
+  }, [num]);
+
+  useLayoutEffect(() => {
+    console.log('InApp useLayoutEffect', 'create', 1111);
+    return () => {
+      console.log('InApp useLayoutEffect', 'destroy', 1111);
+    }
+  }, [num]);
+
+  return (
+    <div>
+      inApp
+      <Inner num={num} />
+    </div>
+  )
 }
 
 const App = () => {
@@ -31,25 +62,25 @@ const App = () => {
   const [number, setNumber] = useState(0);
 
   useEffect(() => {
-    console.log('App useEffect', 'create');
+    console.log('App useEffect', 'create', 1111);
     return () => {
-      console.log('App useEffect', 'destroy');
+      console.log('App useEffect', 'destroy', 1111);
     }
-  }, []);
+  }, [num]);
 
   useInsertionEffect(() => {
-    console.log('App useInsertionEffect', 'create');
+    console.log('App useInsertionEffect', 'create', 1111);
     return () => {
-      console.log('App useInsertionEffect', 'destroy');
+      console.log('App useInsertionEffect', 'destroy', 1111);
     }
-  }, []);
+  }, [num]);
 
   useLayoutEffect(() => {
-    console.log('App useLayoutEffect', 'create');
+    console.log('App useLayoutEffect', 'create', 1111);
     return () => {
-      console.log('App useLayoutEffect', 'destroy');
+      console.log('App useLayoutEffect', 'destroy', 1111);
     }
-  }, []);
+  }, [num]);
 
   const handleClick = () => {
     setNum(num => num+1);
@@ -58,10 +89,10 @@ const App = () => {
 
   return (
     <>
-      <div onClick = {handleClick} onClickCapture={() => console.log(111)}>
+      <div onClick = {handleClick}>
         <p>{`num: ${num}`}</p>
         <p>{`number: ${number}`}</p>
-        <InApp />
+        {num === 0 ? <InApp num={num} /> : null}
       </div>
     </>
   )

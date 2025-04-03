@@ -1029,7 +1029,6 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
       finishConcurrentRender(root, exitStatus, lanes);
     }
   }
-
   ensureRootIsScheduled(root, now());
   // 这里表示任务中断了会结合scheduleCallback中的workLoop中的const continuationCallback = callback(didUserCallbackTimeout)进行判断，如果continuationCallback为function表示中断
   // 其中callback就表示正在执行的任务，在执行之前的任务后如果返回一个function表示任务被中断了，就会把当前正在执行的task的callback赋值为被中断的函数，一般中断函数就是当前执行task的callback，方便重启
@@ -2061,7 +2060,10 @@ function commitRootImpl(
     // TODO: Might be better if `flushPassiveEffects` did not automatically
     // flush synchronous work at the end, to avoid factoring hazards like this.
     // 这个函数很重要 清除effect
-    console.log('因为调度优先级的原因,还得保证本次commit阶段调度的useEffect必须得在下一次commit之前执行,所以才会在每一次commit之前先执行一次flushPassiveEffects,清理掉可能存在的上一次的useEffect。');
+    console.log('每一次开始commit流程之前都先执行一次当前do while流程,用于确保上次commit时未执行完的useEffect副作用在本次commit之前可以全部执行完毕。useEffect的副作用执行是通过开启normal优先级的调度异步执行的,但若有高优先级任务插入,那么就无法保证useEffect副作用可以全部执行完毕,所以采用do while2的形式在commit执行前清理掉上一轮未执行完毕的useEffect副作用');
+    console.log(`用于校验useEffect副作用是否执行完毕的标志就是rootWithPendingPassiveEffects。rootWithPendingPassiveEffects和rootDoesHavePassiveEffects初始值为null,在进行整个commit流程之前,若当前节点或子节点身上带有标志useEffect副作用的flags,则开始一个normal优先级的调度,用于异步执行flushPassiveEffects,将flushPassiveEffects放入taskQueue,并给rootDoesHavePassiveEffects赋值为true。之后commit的执行被更新为同步优先级,所以包含beginwork、completeWrok、commit流程这个任务的优先级最高,先执行,并且不能中断。commit部分执行完毕后,若rootDoesHavePassiveEffects值为true,说明本次更新包含useEffect副作用,则将root赋值给rootWithPendingPassiveEffects。当前整个任务执行完毕后,当前任务从taskQueue中出队,接下来执行处理useEffect副作用的任务,即flushPassiveEffects。
+    由于当前任务是normal优先级的任务,若被高优先级任务插入,中断执行,则下次commit的时候,rootWithPendingPassiveEffects值为root,do while执行flushPassiveEffects,flushPassiveEffects内部判断rootWithPendingPassiveEffects不为null,接下来就会执行useEffect的unmount操作和mount操作,从而保证本次commit前清空上次commit的useEffect副作用。
+    若当前任务正常执行完毕,则flushPassiveEffects内会将rootWithPendingPassiveEffects置为null,那么下次执行commit,进入do while逻辑,执行flushPassiveEffects,flushPassiveEffects判断rootWithPendingPassiveEffects值为null,就不会执行处理useEffect副作用的逻辑了`);
     flushPassiveEffects();
   } while (rootWithPendingPassiveEffects !== null);
   flushRenderPhaseStrictModeWarningsInDEV();

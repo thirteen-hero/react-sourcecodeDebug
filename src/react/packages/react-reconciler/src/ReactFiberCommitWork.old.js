@@ -1271,6 +1271,7 @@ function commitUnmount(
     case ForwardRef:
     case MemoComponent:
     case SimpleMemoComponent: {
+      console.log('当前节点是函数组件,获取当前节点updateQueue中对应副作用并循环执行其销毁函数');
       const updateQueue: FunctionComponentUpdateQueue | null = (current.updateQueue: any);
       if (updateQueue !== null) {
         const lastEffect = updateQueue.lastEffect;
@@ -1282,6 +1283,7 @@ function commitUnmount(
             const {destroy, tag} = effect;
             if (destroy !== undefined) {
               if ((tag & HookInsertion) !== NoHookEffect) {
+                console.log('执行useInsertionEffect的destroy函数');
                 safelyCallDestroy(current, nearestMountedAncestor, destroy);
               } else if ((tag & HookLayout) !== NoHookEffect) {
                 if (enableSchedulingProfiler) {
@@ -1294,9 +1296,11 @@ function commitUnmount(
                   current.mode & ProfileMode
                 ) {
                   startLayoutEffectTimer();
+                  console.log('执行useLayoutEffect的destroy函数');
                   safelyCallDestroy(current, nearestMountedAncestor, destroy);
                   recordLayoutEffectDuration(current);
                 } else {
+                  console.log('执行useLayoutEffect的destroy函数');
                   safelyCallDestroy(current, nearestMountedAncestor, destroy);
                 }
 
@@ -1312,9 +1316,11 @@ function commitUnmount(
       return;
     }
     case ClassComponent: {
+      console.log('当前节点是类组件,将fiber上的ref属性置为空');
       safelyDetachRef(current, nearestMountedAncestor);
       const instance = current.stateNode;
       if (typeof instance.componentWillUnmount === 'function') {
+        console.log('当前组件实例上定义了componentWillUnmount生命周期函数,执行它');
         safelyCallComponentWillUnmount(
           current,
           nearestMountedAncestor,
@@ -1324,6 +1330,7 @@ function commitUnmount(
       return;
     }
     case HostComponent: {
+      console.log('当前节点是dom元素节点,,将fiber上的ref属性置为空');
       safelyDetachRef(current, nearestMountedAncestor);
       return;
     }
@@ -1781,9 +1788,11 @@ function unmountHostComponents(
     }
 
     if (node.tag === HostComponent || node.tag === HostText) {
+      console.log('当前需要删除的子节点是DOM元素节点或文本节点');
       commitNestedUnmounts(finishedRoot, node, nearestMountedAncestor);
       // After all the children have unmounted, it is now safe to remove the
       // node from the tree.
+      console.log('将被删除节点的stateNode从父节点的stateNode中移除');
       if (currentParentIsContainer) {
         removeChildFromContainer(
           ((currentParent: any): Container),
@@ -2234,10 +2243,11 @@ function commitMutationEffects_begin(root: FiberRoot, lanes: Lanes) {
     // TODO: Should wrap this in flags check, too, as optimization
     const deletions = fiber.deletions;
     if (deletions !== null) {
-      console.log('当前节点上有需要删除的子节点,将需要删除的的子节点的return置为null');
+      console.log('当前节点上有需要删除的子节点,循环将该子节点及其子孙节点从dom结构中移除,并执行其副作用的destroy函数');
       for (let i = 0; i < deletions.length; i++) {
         const childToDelete = deletions[i];
         try {
+          console.log('当前需要删除的子节点', childToDelete);
           commitDeletion(root, childToDelete, fiber);
         } catch (error) {
           reportUncaughtErrorInDEV(error);
@@ -2709,13 +2719,16 @@ function commitPassiveMountEffects_begin(
   root: FiberRoot,
   committedLanes: Lanes,
 ) {
+  console.warn('开始commitPassiveMountEffects流程', nextEffect);
   while (nextEffect !== null) {
     const fiber = nextEffect;
     const firstChild = fiber.child;
     if ((fiber.subtreeFlags & PassiveMask) !== NoFlags && firstChild !== null) {
       ensureCorrectReturnPointer(firstChild, fiber);
       nextEffect = firstChild;
+      console.log('当前节点的子节点上有代表useEffect副作用的flags且当前节点的子节点不为null,继续执行commitPassiveMountEffects_begin', nextEffect);
     } else {
+      console.log('当前节点没有子节点,执行commitPassiveMountEffects_complete',nextEffect);
       commitPassiveMountEffects_complete(subtreeRoot, root, committedLanes);
     }
   }
@@ -2742,6 +2755,7 @@ function commitPassiveMountEffects_complete(
 
     if (fiber === subtreeRoot) {
       nextEffect = null;
+      console.warn('当前已执行到根节点,commitPassiveMountEffects流程结束');
       return;
     }
 
@@ -2749,10 +2763,12 @@ function commitPassiveMountEffects_complete(
     if (sibling !== null) {
       ensureCorrectReturnPointer(sibling, fiber.return);
       nextEffect = sibling;
+      console.log('当前节点有兄弟节点,操作兄弟节点执行commitPassiveMountEffects_begin');
       return;
     }
 
     nextEffect = fiber.return;
+    console.log('当前节点有父节点,操作父节点执行commitPassiveMountOnFiber');
   }
 }
 
@@ -2761,6 +2777,7 @@ function commitPassiveMountOnFiber(
   finishedWork: Fiber,
   committedLanes: Lanes,
 ): void {
+  console.log('当前执行commitPassiveMountOnFiber的节点', finishedWork);
   switch (finishedWork.tag) {
     case FunctionComponent:
     case ForwardRef:
@@ -2772,11 +2789,13 @@ function commitPassiveMountOnFiber(
       ) {
         startPassiveEffectTimer();
         try {
+          console.log('执行useEffect的create函数并重置destroy函数');
           commitHookEffectListMount(HookPassive | HookHasEffect, finishedWork);
         } finally {
           recordPassiveEffectDuration(finishedWork);
         }
       } else {
+        console.log('执行useEffect的create函数并重置destroy函数');
         commitHookEffectListMount(HookPassive | HookHasEffect, finishedWork);
       }
       break;
@@ -2887,13 +2906,16 @@ export function commitPassiveUnmountEffects(firstChild: Fiber): void {
 }
 
 function commitPassiveUnmountEffects_begin() {
+  console.warn('开始进行commitPassiveUnmountEffects流程', nextEffect);
+  console.log('commitPassiveUnmountEffects整体流程就是进行useEffect副作用的处理。如果当前节点的子节点被标记删除了,那么从当前被删除子节点开始进行深度优先递归,从当前被删除子节点开始寻找节点是否有useEffect的destroy函数,有则执行,从外向内执行,直到执行到最深层的子节点。然后查找最深层子节点是否有兄弟节点,有则继续向下查找子节点并执行useEffect的destroy函数,没有则返回父节点。重复查找兄弟节点,查找兄弟节点的子节点,没有兄弟节点返回父节点,直至返回被标记删除的节点,对此fiber进行数据清除及卸载。直至所有被标记删除的子节点都以相同的方式清楚卸载结束。然后从当前节点开始由内向外逐个执行useEffect的destroy函数,直至执行到根节点,全部卸载流程完成');
   while (nextEffect !== null) {
     const fiber = nextEffect;
     const child = fiber.child;
-
+    console.log('当前正在进行commitPassiveUnmountEffects_begin的节点', nextEffect);
     if ((nextEffect.flags & ChildDeletion) !== NoFlags) {
       const deletions = fiber.deletions;
       if (deletions !== null) {
+        console.log('当前节点有子元素标记了代表删除的flags');
         for (let i = 0; i < deletions.length; i++) {
           const fiberToDelete = deletions[i];
           nextEffect = fiberToDelete;
@@ -2903,6 +2925,7 @@ function commitPassiveUnmountEffects_begin() {
           );
         }
 
+        // 孩子被删除了 那么它的指针引用等都要清除 方便浏览器回收
         if (deletedTreeCleanUpLevel >= 1) {
           // A fiber was deleted from this parent fiber, but it's still part of
           // the previous (alternate) parent fiber's list of children. Because
@@ -2936,7 +2959,9 @@ function commitPassiveUnmountEffects_begin() {
     if ((fiber.subtreeFlags & PassiveMask) !== NoFlags && child !== null) {
       ensureCorrectReturnPointer(child, fiber);
       nextEffect = child;
+      console.log('当前节点的孩子节点有代表useEffect副作用的flags且当前节点的孩子节点不为null,操作孩子节点执行commitPassiveUnmountEffects_begin', nextEffect);
     } else {
+      console.log('当前节点没有孩子节点,操作当前节点执行commitPassiveUnmountEffects_complete', nextEffect);
       commitPassiveUnmountEffects_complete();
     }
   }
@@ -2955,14 +2980,18 @@ function commitPassiveUnmountEffects_complete() {
     if (sibling !== null) {
       ensureCorrectReturnPointer(sibling, fiber.return);
       nextEffect = sibling;
+      console.log('当前节点有兄弟节点,操作兄弟节点执行commitPassiveUnmountEffects_begin', nextEffect);
       return;
     }
 
     nextEffect = fiber.return;
+    console.log('当前节点没有兄弟节点,操作父节点执行commitPassiveUnmountOnFiber', nextEffect);
   }
+  console.warn('当前已到达根节点,commitPassiveUnmountEffects流程结束');
 }
 
 function commitPassiveUnmountOnFiber(finishedWork: Fiber): void {
+  console.log('当前执行commitPassiveUnmountOnFiber的节点', finishedWork);
   switch (finishedWork.tag) {
     case FunctionComponent:
     case ForwardRef:
@@ -2973,6 +3002,7 @@ function commitPassiveUnmountOnFiber(finishedWork: Fiber): void {
         finishedWork.mode & ProfileMode
       ) {
         startPassiveEffectTimer();
+        console.log('执行useEffect的destroy函数');
         commitHookEffectListUnmount(
           HookPassive | HookHasEffect,
           finishedWork,
@@ -2980,6 +3010,7 @@ function commitPassiveUnmountOnFiber(finishedWork: Fiber): void {
         );
         recordPassiveEffectDuration(finishedWork);
       } else {
+        console.log('执行useEffect的destroy函数');
         commitHookEffectListUnmount(
           HookPassive | HookHasEffect,
           finishedWork,
@@ -2995,12 +3026,13 @@ function commitPassiveUnmountEffectsInsideOfDeletedTree_begin(
   deletedSubtreeRoot: Fiber,
   nearestMountedAncestor: Fiber | null,
 ) {
+  console.log('当前需要被删除的节点执行commitPassiveUnmountEffectsInsideOfDeletedTree_begin', deletedSubtreeRoot);
   while (nextEffect !== null) {
     const fiber = nextEffect;
-
     // Deletion effects fire in parent -> child order
     // TODO: Check if fiber has a PassiveStatic flag
     setCurrentDebugFiberInDEV(fiber);
+    console.log('当前节点执行commitPassiveUnmountInsideDeletedTreeOnFiber', fiber);
     commitPassiveUnmountInsideDeletedTreeOnFiber(fiber, nearestMountedAncestor);
     resetCurrentDebugFiberInDEV();
 
@@ -3010,7 +3042,9 @@ function commitPassiveUnmountEffectsInsideOfDeletedTree_begin(
     if (child !== null) {
       ensureCorrectReturnPointer(child, fiber);
       nextEffect = child;
+      console.log('当前节点有子节点,操作子节点执行commitPassiveUnmountInsideDeletedTreeOnFiber', nextEffect);
     } else {
+      console.log('当前节点没有子节点,操作当前节点执行commitPassiveUnmountEffectsInsideOfDeletedTree_complete', deletedSubtreeRoot);
       commitPassiveUnmountEffectsInsideOfDeletedTree_complete(
         deletedSubtreeRoot,
       );
@@ -3025,7 +3059,7 @@ function commitPassiveUnmountEffectsInsideOfDeletedTree_complete(
     const fiber = nextEffect;
     const sibling = fiber.sibling;
     const returnFiber = fiber.return;
-
+    console.log('当前执行commitPassiveUnmountEffectsInsideOfDeletedTree_complete的节点', nextEffect);
     if (deletedTreeCleanUpLevel >= 2) {
       // Recursively traverse the entire deleted tree and clean up fiber fields.
       // This is more aggressive than ideal, and the long term goal is to only
@@ -3033,6 +3067,7 @@ function commitPassiveUnmountEffectsInsideOfDeletedTree_complete(
       detachFiberAfterEffects(fiber);
       if (fiber === deletedSubtreeRoot) {
         nextEffect = null;
+        console.log('当前节点和最初需要删除的节点是同一个节点,对此节点执行fiber数据清除卸载操作');
         return;
       }
     } else {
@@ -3041,6 +3076,7 @@ function commitPassiveUnmountEffectsInsideOfDeletedTree_complete(
       if (fiber === deletedSubtreeRoot) {
         detachFiberAfterEffects(fiber);
         nextEffect = null;
+        console.log('当前节点和最初需要删除的节点是同一个节点,对此节点执行fiber数据清除卸载操作');
         return;
       }
     }
@@ -3048,10 +3084,11 @@ function commitPassiveUnmountEffectsInsideOfDeletedTree_complete(
     if (sibling !== null) {
       ensureCorrectReturnPointer(sibling, returnFiber);
       nextEffect = sibling;
+      console.log('当前节点有兄弟节点,操作兄弟节点执行commitPassiveUnmountEffectsInsideOfDeletedTree_begin', nextEffect);
       return;
     }
-
     nextEffect = returnFiber;
+    console.log('当前节点没有兄弟节点,操作父节点执行commitPassiveUnmountEffectsInsideOfDeletedTree_complete', nextEffect);
   }
 }
 
@@ -3063,12 +3100,14 @@ function commitPassiveUnmountInsideDeletedTreeOnFiber(
     case FunctionComponent:
     case ForwardRef:
     case SimpleMemoComponent: {
+      console.log('当前节点是函数组件');
       if (
         enableProfilerTimer &&
         enableProfilerCommitHooks &&
         current.mode & ProfileMode
       ) {
         startPassiveEffectTimer();
+        console.log('执行useEffect的destroy函数');
         commitHookEffectListUnmount(
           HookPassive,
           current,
@@ -3076,6 +3115,7 @@ function commitPassiveUnmountInsideDeletedTreeOnFiber(
         );
         recordPassiveEffectDuration(current);
       } else {
+        console.log('执行useEffect的destroy函数');
         commitHookEffectListUnmount(
           HookPassive,
           current,
