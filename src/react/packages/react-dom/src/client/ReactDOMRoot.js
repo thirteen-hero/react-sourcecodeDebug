@@ -131,7 +131,7 @@ ReactDOMHydrationRoot.prototype.render = ReactDOMRoot.prototype.render = functio
       }
     }
   }
-  console.error('第三阶段:首次render');
+  console.error('第三阶段:开始render');
   console.warn('createRoot工作做完后,调用root.render实则是调用updateContainer(children, root, null, null),children是编译好的<App />根组件,root是创建好的FiberRootNode');
   console.log('children:', children);
   console.log('root', root);

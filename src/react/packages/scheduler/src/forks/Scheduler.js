@@ -213,7 +213,7 @@ function workLoop(hasTimeRemaining, initialTime) { //
     ) {
       // This currentTask hasn't expired, and we've reached the deadline.
       // 用过期时间和当前时间比较，没过期就跳出
-      console.log('当前任务不是同步任务且当前任务有超过一帧渲染时间或者有更高优先级的任务,中断执行', currentTask);
+      console.log('当前任务不是同步任务且当前任务有超过一帧渲染时间,中断执行', currentTask);
       console.log('当前任务如果是同步任务,就不会走时间分片逻辑,直接将全部任务执行完毕');
       break;
     }
@@ -382,12 +382,12 @@ function unstable_scheduleCallback(priorityLevel, callback, options) { //这个�
   };
   console.warn(`根据当前任务的options和调度优先级计算任务的过期时间,创建一个新任务newTask:`, newTask);
   console.log(`任务的调度优先级:
-    NoPriority = 0 // 没有任务需要执行
-    ImmediatePriority = 1 // 同步任务优先级 最高优先级
-    UserBlockingPriority = 2
-    NormalPriority = 3
-    LowPriority = 4
-    IdlePriority = 5
+    NoPriority = 0 // 无优先级
+    ImmediatePriority = 1 // 同步任务优先级 最高优先级 点击、keydown、input这种单个事件
+    UserBlockingPriority = 2 // 连续输入优先级 滚动、拖拽等连续事件
+    NormalPriority = 3 // 默认优先级
+    LowPriority = 4 // 低优先级
+    IdlePriority = 5 // 空闲优先级
   `);
   console.log(`调度优先级对应的timeout:
     // Times out immediately

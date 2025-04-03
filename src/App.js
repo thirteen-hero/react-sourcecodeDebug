@@ -22,8 +22,6 @@ const Inner = ({ num }) => {
     }
   }, [num]);
 
-  console.log(num, 'num');
-
   return (<div>inner</div>)
 }
 

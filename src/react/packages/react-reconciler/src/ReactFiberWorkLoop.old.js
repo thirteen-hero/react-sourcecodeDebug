@@ -261,13 +261,13 @@ const RenderContext = /*                */ 0b010;
 const CommitContext = /*                */ 0b100;
 
 type RootExitStatus = 0 | 1 | 2 | 3 | 4 | 5 | 6;
-const RootInProgress = 0;
-const RootFatalErrored = 1;
-const RootErrored = 2;
-const RootSuspended = 3;
+const RootInProgress = 0; // 正在渲染中
+const RootFatalErrored = 1; // 渲染异常
+const RootErrored = 2; // 渲染异常
+const RootSuspended = 3; // 挂起
 const RootSuspendedWithDelay = 4;
-const RootCompleted = 5;
-const RootDidNotComplete = 6;
+const RootCompleted = 5; // fiber树创建完成
+const RootDidNotComplete = 6; // fiber树未创建完成
 
 // Describes where we are in the React execution stack
 let executionContext: ExecutionContext = NoContext;
@@ -1202,6 +1202,7 @@ function finishConcurrentRender(root, exitStatus, lanes) {
     }
     case RootCompleted: {
       // The work completed. Ready to commit.
+      console.error('render阶段结束,将构建完成的fiberTree提交给renderer渲染器开始真实dom的渲染');
       commitRoot(root, workInProgressRootRecoverableErrors);
       break;
     }
@@ -1798,7 +1799,8 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
 // The work loop is an extremely hot path. Tell Closure not to inline it.
 /** @noinline */
 function workLoopSync() {
-  console.warn('当前正在执行workLoopSync,不会进行时间分片,开始reconciler,通过dom diff,构建整个workInProgress结构');
+  console.warn('开始reconciler');
+  console.log('当前正在执行workLoopSync,不会进行时间分片,通过dom diff,构建整个workInProgress结构');
   // Already timed out, so perform work without checking if we need to yield.
   while (workInProgress !== null) {
     performUnitOfWork(workInProgress);
@@ -2051,7 +2053,7 @@ function commitRootImpl(
   recoverableErrors: null | Array<mixed>,
   renderPriorityLevel: EventPriority,
 ) {
-  console.warn('开始commit', root);
+  console.error('第四阶段:开始commit阶段', root);
   do {
     // `flushPassiveEffects` will call `flushSyncUpdateQueue` at the end, which
     // means `flushPassiveEffects` will sometimes result in additional
@@ -2607,7 +2609,7 @@ function flushPassiveEffectsImpl() {
     stateNode.effectDuration = 0;
     stateNode.passiveEffectDuration = 0;
   }
-
+  console.error('commit阶段结束');
   return true;
 }
 
