@@ -764,7 +764,7 @@ function bubbleProperties(completedWork: Fiber) {
   }
 
   completedWork.childLanes = newChildLanes;
-  console.log('更新当前节点的childLanes和subtreeFlags', completedWork);
+  console.log('执行flages冒泡,让子节点的副作用标记flags向上冒泡一层。经过冒泡处理后,访问任意一个fiber节点的subtreeFlags属性,都可以获取它的子节点所需要执行的副作用操作', completedWork);
   return didBailout;
 }
 

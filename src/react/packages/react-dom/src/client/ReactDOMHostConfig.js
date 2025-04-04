@@ -294,6 +294,7 @@ export function finalizeInitialChildren(
   rootContainerInstance: Container,
   hostContext: HostContext,
 ): boolean {
+  console.log('初始化当前DOM元素的原生属性和添加原生事件绑定');
   setInitialProperties(domElement, type, props, rootContainerInstance);
   switch (type) {
     case 'button':
