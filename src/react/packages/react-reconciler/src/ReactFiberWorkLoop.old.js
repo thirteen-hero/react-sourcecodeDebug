@@ -1519,7 +1519,6 @@ function prepareFreshStack(root: FiberRoot, lanes: Lanes): Fiber {
     // $FlowFixMe Complains noTimeout is not a TimeoutID, despite the check above
     cancelTimeout(timeoutHandle);
   }
-
   if (workInProgress !== null) {
     let interruptedWork = workInProgress.return;
     while (interruptedWork !== null) {

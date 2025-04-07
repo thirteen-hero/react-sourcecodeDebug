@@ -461,6 +461,7 @@ function updateMemoComponent(
   renderLanes: Lanes,
 ): null | Fiber {
   if (current === null) {
+    console.log('初始化当前组件');
     const type = Component.type;
     if (
       isSimpleFunctionComponent(type) &&
@@ -480,6 +481,7 @@ function updateMemoComponent(
       if (__DEV__) {
         validateFunctionComponentInDev(workInProgress, type);
       }
+      console.log('当前组件是isSimpleFunctionComponent且当前组件的compare参数为null,且当前组件defaultProps为undefined,给当前节点重新赋值tag和type', workInProgress);
       return updateSimpleMemoComponent(
         current,
         workInProgress,
@@ -512,6 +514,7 @@ function updateMemoComponent(
     child.ref = workInProgress.ref;
     child.return = workInProgress;
     workInProgress.child = child;
+    console.log('当前组件不是isSimpleFunctionComponent或当前组件的compare参数不为null,或当前组件defaultProps不为undefined,根据情况创建子节点', workInProgress.child);
     return child;
   }
   if (__DEV__) {
@@ -529,10 +532,15 @@ function updateMemoComponent(
     }
   }
   const currentChild = ((current.child: any): Fiber); // This is always exactly one child
+  console.log('更新当前memoComponent组件,前后props:', currentChild.memoizedProps, nextProps);
   const hasScheduledUpdateOrContext = checkScheduledUpdateOrContext(
     current,
     renderLanes,
   );
+  console.log(`直接退出复用原来子节点的两个条件:
+    1、当前组件没有context的修改渲染优先级也低于更新优先级
+    2、当前组件有定义compare比较函数根据compare函数的执行结果,没有定义比较函数,根据shallowEqual公共函数的执行结果,结果为true
+  `);
   if (!hasScheduledUpdateOrContext) {
     // This will be the props with resolved defaultProps,
     // unlike current.memoizedProps which will be the unresolved ones.
@@ -540,7 +548,9 @@ function updateMemoComponent(
     // Default to shallow comparison
     let compare = Component.compare;
     compare = compare !== null ? compare : shallowEqual;
+    
     if (compare(prevProps, nextProps) && current.ref === workInProgress.ref) {
+      console.log('以上两个条件都满足,直接退出复用原来的子节点');
       return bailoutOnAlreadyFinishedWork(current, workInProgress, renderLanes);
     }
   }
@@ -550,6 +560,7 @@ function updateMemoComponent(
   newChild.ref = workInProgress.ref;
   newChild.return = workInProgress;
   workInProgress.child = newChild;
+  console.log('以上两个条件有一个不满足,开始更新子节点', newChild);
   return newChild;
 }
 
@@ -596,6 +607,18 @@ function updateSimpleMemoComponent(
   }
   if (current !== null) {
     const prevProps = current.memoizedProps;
+    console.log('更新当前simpleMemoCompenent,前后props:', prevProps, nextProps);
+    console.log(`对当前组件的前后props进行shallowEqual,shallowEqual规则:
+      1、前后props相等(基本数据类型相等或者引用数据类型地址相同),return true;
+      2、前后props一个为引用数据类型另一个为null,return false;
+      3、前后都为对象但引用地址不同,获取两个对象的keys数组,数组长度不同,return false;
+      4、数组长度相同,新旧prop的key不同或新旧props的key值不同,return false;
+      5、否则,return true;
+    `);
+    console.log(`直接退出复用原来子节点的两个条件:
+      1、当前组件没有context的修改渲染优先级也低于更新优先级
+      2、shallowEqual公共函数的执行结果,结果为true
+    `);
     if (
       shallowEqual(prevProps, nextProps) &&
       current.ref === workInProgress.ref &&
@@ -603,6 +626,7 @@ function updateSimpleMemoComponent(
       (__DEV__ ? workInProgress.type === current.type : true)
     ) {
       didReceiveUpdate = false;
+      console.log('shallowEqual判定前后props相同,赋值didReceiveUpdate为false');
       if (!checkScheduledUpdateOrContext(current, renderLanes)) {
         // The pending lanes were cleared at the beginning of beginWork. We're
         // about to bail out, but there might be other lanes that weren't
@@ -618,6 +642,7 @@ function updateSimpleMemoComponent(
         // TODO: Move the reset at in beginWork out of the common path so that
         // this is no longer necessary.
         workInProgress.lanes = current.lanes;
+        console.log('以上两个条件都满足,直接退出复用原来的子节点');
         return bailoutOnAlreadyFinishedWork(
           current,
           workInProgress,
@@ -630,6 +655,7 @@ function updateSimpleMemoComponent(
       }
     }
   }
+  console.log('以上两个条件有一个不满足,开始更新子节点');
   return updateFunctionComponent(
     current,
     workInProgress,
@@ -3493,13 +3519,13 @@ function bailoutOnAlreadyFinishedWork(
   }
 
   markSkippedUpdateLanes(workInProgress.lanes);
-
+  console.log('通过renderLanes和childLanes判定子组件是否有需要更新的内容,scheduleUpdateOnFiber函数里面将触发组件更新的组件到根组件之间的所有优先级都更新就是为这一步做准备');
   // Check if the children have any pending work.
   if (!includesSomeLane(renderLanes, workInProgress.childLanes)) {
     // The children don't have any work either. We can skip them.
     // TODO: Once we add back resuming, we should check if the children are
     // a work-in-progress set. If so, we need to transfer their effects.
-
+    console.log('子组件也没有需要更新的内容了,直接退出');
     if (enableLazyContextPropagation && current !== null) {
       // Before bailing out, check if there are any context changes in
       // the children.
@@ -3515,6 +3541,7 @@ function bailoutOnAlreadyFinishedWork(
   // This fiber doesn't have work, but its subtree does. Clone the child
   // fibers and continue.
   cloneChildFibers(current, workInProgress);
+  console.log('当前组件没有需要更新的内容了,但子组件有需要更新的内容,clone复用子组件并更新子组件的props', workInProgress.child);
   return workInProgress.child;
 }
 
@@ -4017,6 +4044,7 @@ function beginWork(
         }
       }
       resolvedProps = resolveDefaultProps(type.type, resolvedProps);
+      console.log('当前组件是一个memoComponent,当前组件的参数是', resolvedProps);
       return updateMemoComponent(
         current,
         workInProgress,
@@ -4026,6 +4054,8 @@ function beginWork(
       );
     }
     case SimpleMemoComponent: {
+      console.log('当前组件是一个simpleMemoComponent');
+      console.log('memoComponent和simpleMemoComponent生成fiber结构的区别是,memoComponent包裹的函数组件会直接取消掉本身的函数组件结构,直接将其子节点作为memoComponent的子节点,相当于由三层结构变为两层结构,整体结构为memoComponent->children。而simpleMemoComponent则会保留包裹的函数组件本身,整体的结构就是simpleMemoComponent-functionComponent-children');
       return updateSimpleMemoComponent(
         current,
         workInProgress,

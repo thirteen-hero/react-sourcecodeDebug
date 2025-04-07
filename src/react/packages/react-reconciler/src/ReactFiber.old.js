@@ -227,6 +227,7 @@ function shouldConstruct(Component: Function) {
 }
 
 export function isSimpleFunctionComponent(type: any) {
+  console.log('判断当前组件isSimpleFunctionComponent,判定条件是:组件type是一个function,组件type不是一个类组件,组件type不包含defaultProps');
   return (
     typeof type === 'function' &&
     !shouldConstruct(type) &&
