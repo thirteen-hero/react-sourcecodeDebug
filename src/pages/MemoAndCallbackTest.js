@@ -13,7 +13,7 @@ const Son = memo(({ number, doubleNumber, getTripleNumber, secondNumber }) => {
 // });
 }, (prev, curr) => prev.secondNumber === curr.secondNumber);
 
-const MemoAndCallback = () => {
+const MemoAndCallbackTest = () => {
   const [num, setNum] = useState(0);
   const [number, setNumber] = useState(1);
 
@@ -30,7 +30,7 @@ const MemoAndCallback = () => {
   }
   return (
     <div onClick={handleClick}>
-      <p>MemoAndCallback</p>
+      <p>MemoAndCallbackTest</p>
       <p>{num}</p>
       <Son  
         number={number} 
@@ -42,4 +42,4 @@ const MemoAndCallback = () => {
   )
 }
 
-export default MemoAndCallback;
+export default MemoAndCallbackTest;

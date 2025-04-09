@@ -177,6 +177,7 @@ function markUpdate(workInProgress: Fiber) {
 
 function markRef(workInProgress: Fiber) {
   workInProgress.flags |= Ref;
+  console.log('给当前节点添加代表ref的flags标记');
   if (enableSuspenseLayoutEffectSemantics) {
     workInProgress.flags |= RefStatic;
   }
@@ -1024,7 +1025,6 @@ function completeWork(
         if (workInProgress.ref !== null) {
           // If there is a ref on a host node we need to schedule a callback
           markRef(workInProgress);
-          console.log('绑定ref');
         }
       }
       bubbleProperties(workInProgress);

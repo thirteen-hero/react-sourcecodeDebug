@@ -267,6 +267,7 @@ function safelyAttachRef(current: Fiber, nearestMountedAncestor: Fiber | null) {
 }
 
 function safelyDetachRef(current: Fiber, nearestMountedAncestor: Fiber | null) {
+  console.log('置空ref');
   const ref = current.ref;
   if (ref !== null) {
     if (typeof ref === 'function') {
@@ -1060,7 +1061,6 @@ function commitLayoutEffectOnFiber(
       }
     } else {
       if (finishedWork.flags & Ref) {
-        console.log('当前节点存在ref相关的flags属性');
         commitAttachRef(finishedWork);
       }
     }
@@ -1174,7 +1174,6 @@ function hideOrUnhideAllChildren(finishedWork, isHidden) {
 }
 
 function commitAttachRef(finishedWork: Fiber) {
-  console.log('更新ref属性');
   const ref = finishedWork.ref;
   if (ref !== null) {
     const instance = finishedWork.stateNode;
@@ -1225,8 +1224,8 @@ function commitAttachRef(finishedWork: Fiber) {
           );
         }
       }
-
       ref.current = instanceToUse;
+      console.log('更新ref', instanceToUse);
     }
   }
 }
@@ -1330,7 +1329,7 @@ function commitUnmount(
       return;
     }
     case HostComponent: {
-      console.log('当前节点是dom元素节点,,将fiber上的ref属性置为空');
+      console.log('当前节点是dom元素节点,将fiber上的ref属性置为空');
       safelyDetachRef(current, nearestMountedAncestor);
       return;
     }
@@ -1389,19 +1388,24 @@ function commitNestedUnmounts(
     ) {
       node.child.return = node;
       node = node.child;
+      console.log('当前节点有子节点,处理子节点', node);
       continue;
     }
     if (node === root) {
+      console.log('当前已处理到标志被删除的父节点,退出');
       return;
     }
     while (node.sibling === null) {
       if (node.return === null || node.return === root) {
+        console.log('当前节点没有兄弟节点,父节点为null或已处理到标志被删除的父节点,退出');
         return;
       }
       node = node.return;
+      console.log('当前节点没有兄弟节点,但有父节点,处理父节点', node);
     }
     node.sibling.return = node.return;
     node = node.sibling;
+    console.log('当前节点没有子节点但有兄弟节点,处理兄弟节点', node);
   }
 }
 
@@ -1624,7 +1628,7 @@ function commitPlacement(finishedWork: Fiber): void {
   if (!supportsMutation) {
     return;
   }
-  console.log('能够执行commitPlacement的只有HostComponent、HostRoot和HostPortal');
+  console.log('能够执行commitPlacement的只有父组件是HostComponent、HostRoot和HostPortal的组件');
   // Recursively insert all host nodes into the parent.
   const parentFiber = getHostParentFiber(finishedWork);
   console.log('当前操作的节点', finishedWork, '当前节点的父节点', parentFiber);
@@ -1792,7 +1796,7 @@ function unmountHostComponents(
       commitNestedUnmounts(finishedRoot, node, nearestMountedAncestor);
       // After all the children have unmounted, it is now safe to remove the
       // node from the tree.
-      console.log('将被删除节点的stateNode从父节点的stateNode中移除');
+      console.log('被删除节点向下所有子孙节点,函数组件都执行了当前阶段副作用的destroy函数,标志了ref的叶子节点都执行了detachRef,接下来将被删除节点的stateNode从父节点的stateNode中移除');
       if (currentParentIsContainer) {
         removeChildFromContainer(
           ((currentParent: any): Container),
@@ -2315,9 +2319,9 @@ function commitMutationEffectsOnFiber(
   }
 
   if (flags & Ref) {
-    console.log('当前节点有ref标记');
     const current = finishedWork.alternate;
     if (current !== null) {
+      console.log('当前节点有ref标记,当前节点不是初次渲染,清空ref');
       commitDetachRef(current);
     }
     if (enableScopeAPI) {

@@ -3,14 +3,16 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 import EffectAndStateTest from './pages/EffectAndStateTest';
-import MemoAndCallback from './pages/MemoAndCallback';
+import MemoAndCallbackTest from './pages/MemoAndCallbackTest';
+import RefTest from './pages/RefTest';
 
 const App = () => {
   return (
     <BrowserRouter>
       <Routes>
         <Route key="effectAndStateTest" path="/effectAndStateTest" element={<EffectAndStateTest />} />
-        <Route key="memoAndCallback" path="/memoAndCallback" element={<MemoAndCallback />} />
+        <Route key="memoAndCallbackTest" path="/memoAndCallbackTest" element={<MemoAndCallbackTest />} />
+        <Route key="refTest" path="/refTest" element={<RefTest />} />
       </Routes>
     </BrowserRouter>
   )

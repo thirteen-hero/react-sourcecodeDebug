@@ -361,6 +361,7 @@ function updateForwardRef(
   nextProps: any,
   renderLanes: Lanes,
 ) {
+  console.log('当前组件是forward_ref类型的组件');
   // TODO: current can be non-null here even if the component
   // hasn't yet mounted. This happens after the first render suspends.
   // We'll need to figure out if this is fine or can cause issues.
@@ -380,9 +381,9 @@ function updateForwardRef(
       }
     }
   }
-
   const render = Component.render;
   const ref = workInProgress.ref;
+  console.log('当前节点的父组件在beginwork时,通过reactElement对象中的数据进行了子节点对应的fiber的创建。当前节点上面定义了ref,就将当前节点接收的ref的值绑定给当前节点的fiber。因此到了当前节点beginwork的时候获取到fiber.ref,在renderWithHooks时,将props和ref分别传给了当前组件的Component函数,也因此,在当前节点创建子组件fiber时,若子组件的element中定义了ref,就可以将当前节点接收到的ref绑定给子组件fiber。这样在commit阶段更新ref的current为子组件dom或instance实例时,更新的就是最初从外部传入的ref对象,实现了ref的转发。beginwork阶段markRef的条件是:类组件本身存在实例,会markRef;HostComponent节点在mount阶段并且fiber节点上ref不为null或update阶段fiber节点上的ref产生了更新,会markRef。completeWork阶段markRef的条件是:HostComponent节点在mount阶段并且fiber节点上ref不为null或update阶段fiber节点上的ref产生了更新,会markRef。后续commit阶段,在commitMutationEffect阶段,类组件和HostComponent节点在销毁时会detachRef,类组件和HostComponent节点标记了代表ref的flags并且ref产生了更新,此时也detachRef。在commitLayoutEffect阶段,节点标记了代表ref的flags,给ref赋值为当前节点的实例。由于函数组件本身没有实例,所以就算函数组件外面包了forwardRef,对应节点有ref对象,但由于beginwork和completeWork阶段都没有给它加代表ref的flags,所以在后续的commit阶段都不会处理该节点对应的ref对象。', ref);
 
   // The rest is a fork of updateFunctionComponent
   let nextChildren;
@@ -1005,7 +1006,7 @@ function markRef(current: Fiber | null, workInProgress: Fiber) {
   ) {
     // Schedule a Ref effect
     workInProgress.flags |= Ref;
-    console.log('给当前节点添加代表ref的flags');
+    console.log('组件初始化或者ref发生改变,给当前节点添加代表ref的flags,方便后续处理');
     if (enableSuspenseLayoutEffectSemantics) {
       workInProgress.flags |= RefStatic;
     }

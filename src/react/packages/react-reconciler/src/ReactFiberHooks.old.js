@@ -373,7 +373,7 @@ export function renderWithHooks<Props, SecondArg>(
   secondArg: SecondArg,
   nextRenderLanes: Lanes,
 ): any {
-  console.log('执行renderWithHooks,入参有:', '\ncurrent:', current, '\nworkInProgress:', workInProgress, '\nComponent:', Component, '\nprops:', props, '\ncontext:', secondArg);
+  console.log('执行renderWithHooks,入参有:', '\ncurrent:', current, '\nworkInProgress:', workInProgress, '\nComponent:', Component, '\nprops:', props, '\nsecondArg:', secondArg);
   renderLanes = nextRenderLanes;
   currentlyRenderingFiber = workInProgress;
   if (__DEV__) {
@@ -1677,12 +1677,14 @@ function mountRef<T>(initialValue: T): {|current: T|} {
   } else {
     const ref = {current: initialValue};
     hook.memoizedState = ref;
+    console.log('mountRef,创建useRef对应hook对象并把初始值赋值给current,将整个ref对象赋值给hook.memoizedState并返回给函数组件');
     return ref;
   }
 }
 
 function updateRef<T>(initialValue: T): {|current: T|} {
   const hook = updateWorkInProgressHook();
+  console.log('updateRef,直接将hook.memoizedState(ref对象)返回给函数组件');
   return hook.memoizedState;
 }
 
